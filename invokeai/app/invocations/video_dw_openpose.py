@@ -52,8 +52,12 @@ class VideoDWOpenposeDetectionInvocation(BaseInvocation, WithMetadata, WithBoard
 
         onnx_det_path = context.models.download_and_cache_model(DWOpenposeDetector.get_model_url_det())
         onnx_pose_path = context.models.download_and_cache_model(DWOpenposeDetector.get_model_url_pose())
-        loaded_session_det = context.models.load_local_model(onnx_det_path, DWOpenposeDetector.create_onnx_inference_session)
-        loaded_session_pose = context.models.load_local_model(onnx_pose_path, DWOpenposeDetector.create_onnx_inference_session)
+        loaded_session_det = context.models.load_local_model(
+            onnx_det_path, DWOpenposeDetector.create_onnx_inference_session
+        )
+        loaded_session_pose = context.models.load_local_model(
+            onnx_pose_path, DWOpenposeDetector.create_onnx_inference_session
+        )
 
         with loaded_session_det as session_det, loaded_session_pose as session_pose:
             assert isinstance(session_det, ort.InferenceSession)
@@ -64,8 +68,12 @@ class VideoDWOpenposeDetectionInvocation(BaseInvocation, WithMetadata, WithBoard
                 original_size = frame.size  # (W, H)
                 src_w, src_h = original_size
                 scale = _POSE_DETECTION_SHORT_SIDE / min(src_w, src_h)
-                w = max(round(src_w * scale / _POSE_DETECTION_MULTIPLE) * _POSE_DETECTION_MULTIPLE, _POSE_DETECTION_MULTIPLE)
-                h = max(round(src_h * scale / _POSE_DETECTION_MULTIPLE) * _POSE_DETECTION_MULTIPLE, _POSE_DETECTION_MULTIPLE)
+                w = max(
+                    round(src_w * scale / _POSE_DETECTION_MULTIPLE) * _POSE_DETECTION_MULTIPLE, _POSE_DETECTION_MULTIPLE
+                )
+                h = max(
+                    round(src_h * scale / _POSE_DETECTION_MULTIPLE) * _POSE_DETECTION_MULTIPLE, _POSE_DETECTION_MULTIPLE
+                )
                 upsized = frame.resize((w, h), Image.LANCZOS)
                 drawn = detector.run(
                     upsized, draw_face=self.draw_face, draw_hands=self.draw_hands, draw_body=self.draw_body

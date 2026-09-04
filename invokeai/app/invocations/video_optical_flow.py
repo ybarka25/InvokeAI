@@ -66,9 +66,7 @@ class VideoOpticalFlowDetectionInvocation(BaseInvocation, WithMetadata, WithBoar
             if prev_gray[0] is None:
                 out = np.zeros((*gray.shape, 3), dtype=np.uint8)
             else:
-                flow = cv2.calcOpticalFlowFarneback(
-                    prev_gray[0], gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
-                )
+                flow = cv2.calcOpticalFlowFarneback(prev_gray[0], gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
                 out = _flow_to_color(flow, self.magnitude_scale)
             prev_gray[0] = gray
             return Image.fromarray(out)
