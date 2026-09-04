@@ -66,6 +66,7 @@ from invokeai.backend.wan.extensions.wan_vace_extension import (
     encode_control_video_to_vace_condition,
     run_wan_vace_transformer_with_positional_scale,
 )
+from invokeai.backend.wan.memory_optimization import wan_memory_optimization
 from invokeai.backend.wan.nag import apply_nag
 from invokeai.backend.wan.sampling_utils import (
     get_default_latent_channels,
@@ -73,7 +74,6 @@ from invokeai.backend.wan.sampling_utils import (
     make_noise,
     num_latent_frames_for,
 )
-from invokeai.backend.wan.memory_optimization import wan_memory_optimization
 from invokeai.backend.wan.vace_tile_upscale import crossfade_videos, plan_temporal_tiles
 
 # --- SA-Solver (Stochastic Adams Solver, NeurIPS 2023) -----------------------------------
@@ -238,7 +238,6 @@ def _run_sa_solver_vace_denoise_loop(
     sigmas = sigmas.to(device=device, dtype=torch.float32)
     timesteps = timesteps.to(device=device)
 
-    high_model = transformer_field.transformer
     low_model = transformer_field.transformer_low_noise
     num_train_timesteps = 1000
     boundary_timestep = transformer_field.boundary_ratio * num_train_timesteps if low_model is not None else None
@@ -362,11 +361,7 @@ def _run_sa_solver_vace_denoise_loop(
             x_pred = sigmas[i + 1] / sigmas[i] * torch.exp(-(tau_t**2) * h) * x + pred_res
             if tau_t > 0:
                 noise_sample = torch.randn(x.shape, dtype=x.dtype, generator=generator).to(x.device)
-                noise = (
-                    noise_sample
-                    * sigmas[i + 1]
-                    * torch.sqrt((-2 * tau_t**2 * h).expm1().neg())
-                )
+                noise = noise_sample * sigmas[i + 1] * torch.sqrt((-2 * tau_t**2 * h).expm1().neg())
                 x_pred = x_pred + noise
 
         step_callback(
@@ -555,7 +550,7 @@ class WanVacePoseDepthGenerateInvocation(BaseInvocation, WithMetadata, WithBoard
         default="unipc",
         description="Solver algorithm + sigma schedule. This fork defaults to UniPC (unset scheduler config, "
         "e.g. GGUF checkpoints). Reference ComfyUI pipelines using the same distillation LoRA stack were found "
-        "using SA-Solver instead, with either a linear (\"simple\") or KL-optimal (\"kl_optimal\", ComfyUI's "
+        'using SA-Solver instead, with either a linear ("simple") or KL-optimal ("kl_optimal", ComfyUI\'s '
         "kl_optimal_scheduler -- denser sampling near both ends of the schedule) sigma schedule.",
     )
 
@@ -599,7 +594,9 @@ class WanVacePoseDepthGenerateInvocation(BaseInvocation, WithMetadata, WithBoard
     @torch.no_grad()
     def invoke(self, context: InvocationContext) -> VideoOutput:
         if (self.frames_per_cycle - 1) % 4 != 0:
-            raise ValueError(f"frames_per_cycle must satisfy (frames_per_cycle - 1) %% 4 == 0 (got {self.frames_per_cycle}).")
+            raise ValueError(
+                f"frames_per_cycle must satisfy (frames_per_cycle - 1) %% 4 == 0 (got {self.frames_per_cycle})."
+            )
         bridge_frames = self.loop_bridge_frames if self.loop_bridge_frames else self.frames_per_cycle
         want_bridge = self.build_loop_bridge and self.start_image is not None and self.end_image is not None
         if want_bridge and (bridge_frames - 1) % 4 != 0:
@@ -627,7 +624,9 @@ class WanVacePoseDepthGenerateInvocation(BaseInvocation, WithMetadata, WithBoard
                 f"control_video decoded to {control_frames.shape[0]} frames, expected num_frames={self.num_frames}."
             )
 
-        start_pixel = _decode_image_pixels(context, self.start_image, self.width, self.height) if self.start_image else None
+        start_pixel = (
+            _decode_image_pixels(context, self.start_image, self.width, self.height) if self.start_image else None
+        )
         end_pixel = _decode_image_pixels(context, self.end_image, self.width, self.height) if self.end_image else None
 
         temporal_tiles = plan_temporal_tiles(self.num_frames, self.frames_per_cycle, self.cycle_crossfade)
@@ -676,7 +675,9 @@ class WanVacePoseDepthGenerateInvocation(BaseInvocation, WithMetadata, WithBoard
         pos_cond = self._load_conditioning(context, self.positive_conditioning, device=device, dtype=inference_dtype)
         neg_cond: Optional[WanConditioningInfo] = None
         if self.negative_conditioning is not None:
-            neg_cond = self._load_conditioning(context, self.negative_conditioning, device=device, dtype=inference_dtype)
+            neg_cond = self._load_conditioning(
+                context, self.negative_conditioning, device=device, dtype=inference_dtype
+            )
 
         step_callback = self._build_step_callback(context)
 
@@ -801,8 +802,10 @@ class WanVacePoseDepthGenerateInvocation(BaseInvocation, WithMetadata, WithBoard
                 if self.sampler.startswith("sa_solver"):
                     # Bypass diffusers' SASolverScheduler.step() entirely (see the module-level
                     # comment above _run_sa_solver_vace_denoise_loop for why).
-                    effective_shift = self.flow_shift if self.flow_shift is not None else (
-                        5.0 if variant == WanVariantType.TI2V_5B else 3.0
+                    effective_shift = (
+                        self.flow_shift
+                        if self.flow_shift is not None
+                        else (5.0 if variant == WanVariantType.TI2V_5B else 3.0)
                     )
                     if self.sampler == "sa_solver_kl_optimal":
                         sa_sigmas, sa_timesteps = _kl_optimal_flow_sigmas(
@@ -895,7 +898,9 @@ class WanVacePoseDepthGenerateInvocation(BaseInvocation, WithMetadata, WithBoard
             reference_pixels_list = [p for p in (start_pixel, end_pixel) if p is not None] or None
 
             for cycle_idx, ttile in enumerate(temporal_tiles):
-                context.util.signal_progress(f"Wan VACE pose+depth generate: cycle {cycle_idx + 1}/{len(temporal_tiles)}")
+                context.util.signal_progress(
+                    f"Wan VACE pose+depth generate: cycle {cycle_idx + 1}/{len(temporal_tiles)}"
+                )
                 is_first = ttile.start == 0
                 is_last = ttile.start + ttile.length == self.num_frames
                 pixels = run_cycle(
@@ -904,15 +909,17 @@ class WanVacePoseDepthGenerateInvocation(BaseInvocation, WithMetadata, WithBoard
                     crossfade=ttile.crossfade,
                     cycle_seed=self.seed + cycle_idx * 10007,
                     progress_desc=f"Wan VACE pose+depth generate (cycle {cycle_idx + 1}/{len(temporal_tiles)})",
-                    anchor_start=start_pixel if (self.pixel_anchor_start_end and is_first and start_pixel is not None) else None,
-                    anchor_end=end_pixel if (self.pixel_anchor_start_end and is_last and end_pixel is not None) else None,
+                    anchor_start=start_pixel
+                    if (self.pixel_anchor_start_end and is_first and start_pixel is not None)
+                    else None,
+                    anchor_end=end_pixel
+                    if (self.pixel_anchor_start_end and is_last and end_pixel is not None)
+                    else None,
                     fade_tail=self.cycle_crossfade if (is_last and want_bridge) else None,
                     reference_pixels=reference_pixels_list,
                 )
                 output_segments.append(pixels)
-                next_crossfade = (
-                    temporal_tiles[cycle_idx + 1].crossfade if cycle_idx + 1 < len(temporal_tiles) else 0
-                )
+                next_crossfade = temporal_tiles[cycle_idx + 1].crossfade if cycle_idx + 1 < len(temporal_tiles) else 0
                 prev_tail = pixels[-next_crossfade:] if next_crossfade > 0 else None
 
             result = output_segments[0]

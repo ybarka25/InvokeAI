@@ -22,7 +22,6 @@ from contextlib import contextmanager
 from typing import Iterator, Optional
 
 import torch
-
 from diffusers.models.attention_dispatch import dispatch_attention_fn
 from diffusers.models.transformers.transformer_wan import _get_qkv_projections
 

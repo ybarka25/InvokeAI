@@ -161,8 +161,8 @@ def _default_scheduler_for_variant(
     # steps of the right noise levels for conditioning (control video, identity
     # reference) to actually take hold -- a plausible cause of a few-step run
     # collapsing to a generic, conditioning-insensitive output.
-    flow_shift = flow_shift_override if flow_shift_override is not None else (
-        5.0 if variant == WanVariantType.TI2V_5B else 3.0
+    flow_shift = (
+        flow_shift_override if flow_shift_override is not None else (5.0 if variant == WanVariantType.TI2V_5B else 3.0)
     )
     if sampler == "sa_solver":
         # SASolverScheduler's default tau_func (`1 if 200 <= t <= 800 else 0`) gates its

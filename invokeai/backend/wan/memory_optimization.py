@@ -57,14 +57,14 @@ def _optimized_wan_transformer_forward(
     # non-default attention kwargs, and VACE's control-video branch (the
     # compact fast path below does not implement vace_blocks injection).
     if torch.is_grad_enabled() or timestep.ndim != 2 or attention_kwargs or control_hidden_states is not None:
-        kwargs: dict[str, Any] = dict(
-            hidden_states=hidden_states,
-            timestep=timestep,
-            encoder_hidden_states=encoder_hidden_states,
-            encoder_hidden_states_image=encoder_hidden_states_image,
-            return_dict=return_dict,
-            attention_kwargs=attention_kwargs,
-        )
+        kwargs: dict[str, Any] = {
+            "hidden_states": hidden_states,
+            "timestep": timestep,
+            "encoder_hidden_states": encoder_hidden_states,
+            "encoder_hidden_states_image": encoder_hidden_states_image,
+            "return_dict": return_dict,
+            "attention_kwargs": attention_kwargs,
+        }
         if control_hidden_states is not None:
             kwargs["control_hidden_states"] = control_hidden_states
             kwargs["control_hidden_states_scale"] = control_hidden_states_scale

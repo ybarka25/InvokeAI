@@ -75,12 +75,8 @@ class VaceControlBlendInvocation(BaseInvocation, WithMetadata, WithBoard):
             )
         width, height, _, _ = probes[0]
         if width % 2 or height % 2:
-            raise ValueError(
-                f"Control-video layers are {width}x{height}; H.264 encoding requires even dimensions."
-            )
-        output_fps = float(self.fps) if self.fps is not None else next(
-            (fps for (_, _, _, fps) in probes if fps), 16.0
-        )
+            raise ValueError(f"Control-video layers are {width}x{height}; H.264 encoding requires even dimensions.")
+        output_fps = float(self.fps) if self.fps is not None else next((fps for (_, _, _, fps) in probes if fps), 16.0)
 
         context.util.signal_progress(f"Blending {len(layers)} VACE control layer(s)")
 
@@ -89,8 +85,7 @@ class VaceControlBlendInvocation(BaseInvocation, WithMetadata, WithBoard):
         per_layer_frames: list[list[np.ndarray]] = []
         for i, path in enumerate(paths):
             layer_frames = [
-                np.ascontiguousarray(frame)
-                for frame in iter_video_frames(path, is_canceled=context.util.is_canceled)
+                np.ascontiguousarray(frame) for frame in iter_video_frames(path, is_canceled=context.util.is_canceled)
             ]
             if not layer_frames:
                 raise ValueError(f"Control-video layer {i} decoded to zero frames.")
@@ -108,7 +103,7 @@ class VaceControlBlendInvocation(BaseInvocation, WithMetadata, WithBoard):
                     if context.util.is_canceled is not None and context.util.is_canceled():
                         raise CanceledException
                     acc = np.zeros((height, width, 3), dtype=np.float32)
-                    for layer_frames, layer in zip(per_layer_frames, layers):
+                    for layer_frames, layer in zip(per_layer_frames, layers, strict=False):
                         frame = layer_frames[i] if i < len(layer_frames) else layer_frames[-1]
                         strength = float(layer.strength)
                         frame_f = frame.astype(np.float32)

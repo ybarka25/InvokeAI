@@ -163,7 +163,9 @@ def run_wan_vace_denoise_loop(
             )
             exit_stack.callback(swapper.close)
 
-        for step_idx, t in enumerate(tqdm(timesteps, desc=f"{progress_desc} ({t_lat} latent frames)", total=total_steps)):
+        for step_idx, t in enumerate(
+            tqdm(timesteps, desc=f"{progress_desc} ({t_lat} latent frames)", total=total_steps)
+        ):
             if low_model is not None and float(t) < float(boundary_timestep):
                 active_label = _ExpertSwapper.LOW
                 low_cfg = guidance_scale_low_noise

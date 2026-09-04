@@ -48,7 +48,9 @@ def _person_bbox(np_image: np.ndarray, detector: DWOpenposeDetector, score_thres
     return float(pts[:, 0].min()), float(pts[:, 1].min()), float(pts[:, 0].max()), float(pts[:, 1].max())
 
 
-def _centered_crop_box(image_w: int, image_h: int, bbox: Optional[_BBoxT], target_ratio: float) -> tuple[int, int, int, int]:
+def _centered_crop_box(
+    image_w: int, image_h: int, bbox: Optional[_BBoxT], target_ratio: float
+) -> tuple[int, int, int, int]:
     """Expands ``bbox`` (with margin) to ``target_ratio`` (w/h), centered, clamped to the image."""
     if bbox is None:
         cx, cy, bw, bh = image_w / 2.0, image_h / 2.0, float(image_w), float(image_h)
@@ -211,7 +213,9 @@ class WanVaceLoopPrepInvocation(BaseInvocation, WithMetadata, WithBoard):
             # scene anchored to the reference image while pose (still from the real video) is
             # the only thing carrying motion.
             start_frame_np = np.ascontiguousarray(np.array(resized_start))
-            tmp_start = tempfile.NamedTemporaryFile(prefix="invokeai_vace_loop_prep_start_", suffix=".mp4", delete=False)
+            tmp_start = tempfile.NamedTemporaryFile(
+                prefix="invokeai_vace_loop_prep_start_", suffix=".mp4", delete=False
+            )
             tmp_start.close()
             tmp_start_path = Path(tmp_start.name)
             try:

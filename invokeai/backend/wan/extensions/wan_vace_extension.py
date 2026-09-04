@@ -42,9 +42,7 @@ _WAN_VACE_MASK_CHANNELS = 64
 _VAE_SPATIAL_SCALE = 8
 
 
-def _pack_mask_to_latent_channels(
-    mask_pixel: torch.Tensor, t_lat: int, h_lat: int, w_lat: int
-) -> torch.Tensor:
+def _pack_mask_to_latent_channels(mask_pixel: torch.Tensor, t_lat: int, h_lat: int, w_lat: int) -> torch.Tensor:
     """Block-unshuffles a pixel-space mask into the 64-channel packed latent mask.
 
     ``mask_pixel`` is ``[T, H, W]`` in ``[0, 1]``, where ``H``/``W`` are multiples of
@@ -57,9 +55,7 @@ def _pack_mask_to_latent_channels(
     new_h, new_w = height // _VAE_SPATIAL_SCALE, width // _VAE_SPATIAL_SCALE
     packed = mask_pixel.view(num_frames, new_h, _VAE_SPATIAL_SCALE, new_w, _VAE_SPATIAL_SCALE)
     packed = packed.permute(2, 4, 0, 1, 3).flatten(0, 1)  # [64, T, new_h, new_w]
-    packed = F.interpolate(
-        packed.unsqueeze(0), size=(t_lat, h_lat, w_lat), mode="nearest-exact"
-    ).squeeze(0)
+    packed = F.interpolate(packed.unsqueeze(0), size=(t_lat, h_lat, w_lat), mode="nearest-exact").squeeze(0)
     return packed
 
 
@@ -107,10 +103,14 @@ def encode_control_video_to_vace_condition(
         reactive_latents = vae.encode(reactive, return_dict=False)[0].mode()
 
         latents_mean = (
-            torch.tensor(vae.config.latents_mean).view(1, -1, 1, 1, 1).to(inactive_latents.device, inactive_latents.dtype)
+            torch.tensor(vae.config.latents_mean)
+            .view(1, -1, 1, 1, 1)
+            .to(inactive_latents.device, inactive_latents.dtype)
         )
         latents_std = (
-            torch.tensor(vae.config.latents_std).view(1, -1, 1, 1, 1).to(inactive_latents.device, inactive_latents.dtype)
+            torch.tensor(vae.config.latents_std)
+            .view(1, -1, 1, 1, 1)
+            .to(inactive_latents.device, inactive_latents.dtype)
         )
         inactive_latents = (inactive_latents - latents_mean) / latents_std
         reactive_latents = (reactive_latents - latents_mean) / latents_std
