@@ -42821,6 +42821,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ModelVariantType"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WanVariantType"
                     }
                   ]
                 },

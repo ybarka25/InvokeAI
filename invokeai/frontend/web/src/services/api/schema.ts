@@ -18043,7 +18043,7 @@ export type components = {
              * Ui Model Variant
              * @default null
              */
-            ui_model_variant: (components["schemas"]["ClipVariantType"] | components["schemas"]["ModelVariantType"])[] | null;
+            ui_model_variant: (components["schemas"]["ClipVariantType"] | components["schemas"]["ModelVariantType"] | components["schemas"]["WanVariantType"])[] | null;
             /**
              * Ui Model Format
              * @default null
