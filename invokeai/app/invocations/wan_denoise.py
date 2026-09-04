@@ -236,6 +236,13 @@ class _ExpertSwapper:
         # see its docstring comment for why that's necessary.
         self._release()
 
+        # Hand the PyTorch allocator a clean slate before partial_load_to_vram measures
+        # free space — the freed blocks stay pinned in the caching allocator until
+        # empty_cache is called. Unconditional (not just when _release() just force-unloaded
+        # something): a stale reading here still skews the very first expert's load, before
+        # any release has ever happened.
+        TorchDevice.empty_cache()
+
         # Load the requested expert lazily so its ``LoadedModel`` handle is
         # always fresh — see class docstring for the cache-eviction reasoning.
         model_id = self._high_model if label == self.HIGH else self._low_model

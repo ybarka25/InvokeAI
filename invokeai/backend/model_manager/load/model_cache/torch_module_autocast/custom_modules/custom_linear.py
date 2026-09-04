@@ -118,16 +118,13 @@ class CustomLinear(torch.nn.Linear, CustomModuleMixin):
             return self._autocast_forward_with_patches(input)
         elif self._device_autocasting_enabled:
             return self._autocast_forward(input)
-        elif isinstance(self.weight, GGMLTensor) or (
-            input.is_floating_point()
-            and (
-                (self.weight.is_floating_point() and self.weight.dtype != input.dtype)
-                or (
-                    self.bias is not None
-                    and self.bias.is_floating_point()
-                    and not isinstance(self.bias, (GGMLTensor, SDNQTensor))
-                    and self.bias.dtype != input.dtype
-                )
+        elif input.is_floating_point() and (
+            (self.weight.is_floating_point() and self.weight.dtype != input.dtype)
+            or (
+                self.bias is not None
+                and self.bias.is_floating_point()
+                and not isinstance(self.bias, (GGMLTensor, SDNQTensor))
+                and self.bias.dtype != input.dtype
             )
         ):
             weight, bias = self._cast_weight_bias_for_input(input)

@@ -138,7 +138,9 @@ def _build_context(
     context.util.signal_progress = MagicMock()
     context.util.sd_step_callback = MagicMock()
     context.logger = MagicMock()
-    context.config.get.return_value.wan_memory_optimization = False
+    context.config.get.return_value.wan_max_resident_transformer_gb = None
+    context.config.get.return_value.wan_attention_backend = "native"
+    context.config.get.return_value.wan_torch_compile = False
     return context
 
 
@@ -272,13 +274,13 @@ class TestWanDenoiseShapes:
             lambda _device: MagicMock(total_memory=total_vram),
         )
 
-        working_mem_bytes = _get_wan_transformer_working_mem_bytes(torch.device("cuda"), enabled=True)
+        working_mem_bytes = _get_wan_transformer_working_mem_bytes(torch.device("cuda"), max_resident_gb=2.0)
 
         assert working_mem_bytes == 22 * 2**30
 
     def test_memory_optimization_does_not_change_cpu_or_disabled_loading(self) -> None:
-        assert _get_wan_transformer_working_mem_bytes(torch.device("cpu"), enabled=True) is None
-        assert _get_wan_transformer_working_mem_bytes(torch.device("cuda"), enabled=False) is None
+        assert _get_wan_transformer_working_mem_bytes(torch.device("cpu"), max_resident_gb=2.0) is None
+        assert _get_wan_transformer_working_mem_bytes(torch.device("cuda"), max_resident_gb=None) is None
 
     def test_expert_swapper_passes_aggressive_working_memory_to_model_cache(self) -> None:
         transformer = _ZeroTransformer()
@@ -308,7 +310,10 @@ class TestWanDenoiseShapes:
             swapper.close()
 
         loaded.model_on_device.assert_called_once_with(working_mem_bytes=working_mem_bytes)
-        loaded.unload_from_vram.assert_called_once_with(3 * 2**30, keep_required_weights_in_vram=True)
+        # Called twice: once by get()'s residency trim, once more by _release()'s
+        # unconditional force-unload of the outgoing expert on close().
+        assert loaded.unload_from_vram.call_count == 2
+        loaded.unload_from_vram.assert_any_call(3 * 2**30, keep_required_weights_in_vram=True)
 
     def test_expert_swapper_does_not_trim_when_residency_is_already_targeted(self) -> None:
         transformer = _ZeroTransformer()
@@ -336,7 +341,9 @@ class TestWanDenoiseShapes:
             swapper.close()
 
         loaded.model_on_device.assert_called_once_with(working_mem_bytes=working_mem_bytes)
-        loaded.unload_from_vram.assert_not_called()
+        # get()'s residency trim doesn't fire (already at target), but _release()'s
+        # unconditional force-unload of the outgoing expert on close() still does.
+        loaded.unload_from_vram.assert_called_once()
 
     def test_expert_swapper_skips_residency_trim_without_partial_loading(self) -> None:
         transformer = _ZeroTransformer()
@@ -363,7 +370,10 @@ class TestWanDenoiseShapes:
             swapper.close()
 
         loaded.model_on_device.assert_called_once_with()
-        loaded.unload_from_vram.assert_not_called()
+        # get()'s residency trim is skipped (no partial-loading support), but _release()'s
+        # unconditional force-unload of the outgoing expert on close() still fires --
+        # full unload from VRAM doesn't require partial-loading support.
+        loaded.unload_from_vram.assert_called_once()
         context.logger.warning.assert_called_once()
 
     def test_cfg_doubles_transformer_calls(self, fake_model_root) -> None:
@@ -393,7 +403,9 @@ class TestWanDenoiseShapes:
         # 3 steps × 2 (cond + uncond) = 6 forward calls.
         assert len(transformer.calls) == 6
 
-    def test_memory_optimization_config_wraps_each_active_expert_step(self, fake_model_root, monkeypatch) -> None:
+    def test_memory_optimization_wraps_each_active_expert_step(self, fake_model_root, monkeypatch) -> None:
+        """Activation chunking is unconditional -- decoupled from the VRAM-residency
+        cap, since it's cheap and safe regardless of that setting (see wan_denoise.py)."""
         transformer = _ZeroTransformer()
         ctx = _build_context(
             transformer,
@@ -402,7 +414,6 @@ class TestWanDenoiseShapes:
             pos_cond=_make_conditioning(),
             neg_cond=None,
         )
-        ctx.config.get.return_value.wan_memory_optimization = True
         enabled_calls: list[bool] = []
 
         @contextmanager
