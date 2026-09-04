@@ -35843,6 +35843,9 @@
                   "$ref": "#/components/schemas/VAELoaderInvocation"
                 },
                 {
+                  "$ref": "#/components/schemas/VaceControlBlendInvocation"
+                },
+                {
                   "$ref": "#/components/schemas/VideoConcatInvocation"
                 },
                 {
@@ -35883,6 +35886,15 @@
                 },
                 {
                   "$ref": "#/components/schemas/WanTextEncoderInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/WanVaceDenoiseInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/WanVaceLoopPrepInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/WanVacePoseDepthGenerateInvocation"
                 },
                 {
                   "$ref": "#/components/schemas/WanVideoDenoiseInvocation"
@@ -36281,6 +36293,9 @@
                   "$ref": "#/components/schemas/VAEOutput"
                 },
                 {
+                  "$ref": "#/components/schemas/VaceControlLayerOutput"
+                },
+                {
                   "$ref": "#/components/schemas/VideoOutput"
                 },
                 {
@@ -36294,6 +36309,12 @@
                 },
                 {
                   "$ref": "#/components/schemas/WanRefImageOutput"
+                },
+                {
+                  "$ref": "#/components/schemas/WanVaceConditioningOutput"
+                },
+                {
+                  "$ref": "#/components/schemas/WanVaceLoopPrepOutput"
                 },
                 {
                   "$ref": "#/components/schemas/WorkflowReturnGetOutput"
@@ -44384,6 +44405,9 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VaceControlBlendInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
               },
               {
@@ -44424,6 +44448,15 @@
               },
               {
                 "$ref": "#/components/schemas/WanTextEncoderInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceDenoiseInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceLoopPrepInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVacePoseDepthGenerateInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanVideoDenoiseInvocation"
@@ -44779,6 +44812,9 @@
                 "$ref": "#/components/schemas/VAEOutput"
               },
               {
+                "$ref": "#/components/schemas/VaceControlLayerOutput"
+              },
+              {
                 "$ref": "#/components/schemas/VideoOutput"
               },
               {
@@ -44792,6 +44828,12 @@
               },
               {
                 "$ref": "#/components/schemas/WanRefImageOutput"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceConditioningOutput"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceLoopPrepOutput"
               },
               {
                 "$ref": "#/components/schemas/WorkflowReturnGetOutput"
@@ -45735,6 +45777,9 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VaceControlBlendInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
               },
               {
@@ -45775,6 +45820,15 @@
               },
               {
                 "$ref": "#/components/schemas/WanTextEncoderInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceDenoiseInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceLoopPrepInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVacePoseDepthGenerateInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanVideoDenoiseInvocation"
@@ -46700,6 +46754,9 @@
           "unsharp_mask_oklab": {
             "$ref": "#/components/schemas/ImageOutput"
           },
+          "vace_control_blend": {
+            "$ref": "#/components/schemas/VideoOutput"
+          },
           "vae_loader": {
             "$ref": "#/components/schemas/VAEOutput"
           },
@@ -46744,6 +46801,15 @@
           },
           "wan_ti2v_ideal_dimensions": {
             "$ref": "#/components/schemas/IdealSizeOutput"
+          },
+          "wan_vace_denoise": {
+            "$ref": "#/components/schemas/LatentsOutput"
+          },
+          "wan_vace_loop_prep": {
+            "$ref": "#/components/schemas/WanVaceLoopPrepOutput"
+          },
+          "wan_vace_pose_depth_generate": {
+            "$ref": "#/components/schemas/VideoOutput"
           },
           "wan_video_denoise": {
             "$ref": "#/components/schemas/LatentsOutput"
@@ -47070,6 +47136,7 @@
           "tomask",
           "unsharp_mask",
           "unsharp_mask_oklab",
+          "vace_control_blend",
           "vae_loader",
           "video",
           "video_concat",
@@ -47085,6 +47152,9 @@
           "wan_ref_image_encoder",
           "wan_text_encoder",
           "wan_ti2v_ideal_dimensions",
+          "wan_vace_denoise",
+          "wan_vace_loop_prep",
+          "wan_vace_pose_depth_generate",
           "wan_video_denoise",
           "workflow_return",
           "workflow_return_get",
@@ -48003,6 +48073,9 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VaceControlBlendInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
               },
               {
@@ -48043,6 +48116,15 @@
               },
               {
                 "$ref": "#/components/schemas/WanTextEncoderInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceDenoiseInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceLoopPrepInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVacePoseDepthGenerateInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanVideoDenoiseInvocation"
@@ -49063,6 +49145,9 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VaceControlBlendInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
               },
               {
@@ -49103,6 +49188,15 @@
               },
               {
                 "$ref": "#/components/schemas/WanTextEncoderInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceDenoiseInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVaceLoopPrepInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanVacePoseDepthGenerateInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanVideoDenoiseInvocation"
@@ -89040,6 +89134,172 @@
         "title": "VAE_Diffusers_Wan_Config",
         "description": "Model config for Wan 2.2 VAE in diffusers folder layout (AutoencoderKLWan)."
       },
+      "VaceControlBlendInvocation": {
+        "category": "conditioning",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Composites several control-video layers into one control video for `wan_vace_video_encode`.\n\nLayers are painted in ascending `order` (ties keep their original wiring position, so a\nduplicate/omitted order still degrades to a stable, close-to-intended result rather than\nan arbitrary shuffle). Each layer is composited over the accumulator with a screen blend\n(`1 - (1-acc)*(1-frame)`), interpolated toward the accumulator by `1 - strength`: a\nstrength-1.0 layer fully screens in, strength-0.0 leaves the accumulator untouched. Screen\nblending never darkens what's already there (unlike a straight opacity blend, which dims a\nbright layer -- e.g. a depth map -- wherever a darker layer -- e.g. a mostly-black pose\nskeleton frame -- is composited over it, pushing the combined image out of the brightness\nrange either control type was trained on individually).\n\nAll layers must share pixel dimensions. A layer with fewer decoded frames than the\nlongest one has its last frame held to pad it out, matching `wan_vace_video_encode`'s\nown padding convention.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "layers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/VaceControlLayerField"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Control-video layers to composite. Order/strength come from each vace_control_layer node.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true,
+            "title": "Layers"
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "maximum": 120,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Output frame rate. Defaults to the first layer's fps.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": null,
+            "orig_required": false,
+            "title": "Fps"
+          },
+          "type": {
+            "const": "vace_control_blend",
+            "default": "vace_control_blend",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["video", "conditioning", "wan", "vace", "v2v", "compositing"],
+        "title": "Blend Control Video Layers - VACE",
+        "type": "object",
+        "version": "1.2.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
+      },
+      "VaceControlLayerField": {
+        "description": "One control-video layer for `vace_control_blend`: a video plus its application\nstrength (opacity) and stacking order (paint position), so several preprocessed\ncontrol videos (canny, depth, pose, ...) can be composited into a single control video.",
+        "properties": {
+          "video": {
+            "$ref": "#/components/schemas/VideoField",
+            "description": "The control video for this layer."
+          },
+          "strength": {
+            "default": 1.0,
+            "description": "Application force (opacity) when this layer is painted over the layers beneath it.",
+            "title": "Strength",
+            "type": "number"
+          },
+          "order": {
+            "default": 0,
+            "description": "Stacking position; lower values paint first (further back). Ties keep the layers' wiring order.",
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "required": ["video"],
+        "title": "VaceControlLayerField",
+        "type": "object"
+      },
+      "VaceControlLayerOutput": {
+        "class": "output",
+        "description": "Output of vace_control_layer: one control-video layer for vace_control_blend.",
+        "properties": {
+          "layer": {
+            "$ref": "#/components/schemas/VaceControlLayerField",
+            "description": "Control-video layer (video + strength + order).",
+            "field_kind": "output",
+            "title": "Control Layer",
+            "ui_hidden": false
+          },
+          "type": {
+            "const": "vace_control_layer_output",
+            "default": "vace_control_layer_output",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["output_meta", "layer", "type", "type"],
+        "title": "VaceControlLayerOutput",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -91526,6 +91786,995 @@
         "required": ["transformer"],
         "title": "WanTransformerField",
         "type": "object"
+      },
+      "WanVaceConditioningField": {
+        "description": "Control-video conditioning for Wan 2.2 VACE (video-to-video).\n\nCarries the 96-channel VAE-latent condition tensor (32-channel inactive\n+ reactive latents, 64-channel region mask) that\n``WanVACETransformer3DModel`` consumes as ``control_hidden_states``. This\nfirst pass has no mask-based region editing, so the mask half is always\n\"fully active\" (the whole frame is guided by the control video).",
+        "properties": {
+          "condition_tensor_name": {
+            "description": "Name of the saved [1, 96, num_reference_images + T_lat, H/8, W/8] condition tensor.",
+            "title": "Condition Tensor Name",
+            "type": "string"
+          },
+          "width": {
+            "description": "Control-video width used during VAE encoding (matches denoise width).",
+            "title": "Width",
+            "type": "integer"
+          },
+          "height": {
+            "description": "Control-video height used during VAE encoding (matches denoise height).",
+            "title": "Height",
+            "type": "integer"
+          },
+          "num_frames": {
+            "description": "Pixel-frame count the condition was built for (matches denoise num_frames).",
+            "title": "Num Frames",
+            "type": "integer"
+          },
+          "num_reference_images": {
+            "default": 0,
+            "description": "Number of reference-image latent frames prepended to the condition tensor. The denoise node must strip this many leading latent frames from its output before it's a valid video latent.",
+            "title": "Num Reference Images",
+            "type": "integer"
+          }
+        },
+        "required": ["condition_tensor_name", "width", "height", "num_frames"],
+        "title": "WanVaceConditioningField",
+        "type": "object"
+      },
+      "WanVaceConditioningOutput": {
+        "class": "output",
+        "description": "Output of a Wan 2.2 VACE control-video VAE-encoder.",
+        "properties": {
+          "vace_condition": {
+            "$ref": "#/components/schemas/WanVaceConditioningField",
+            "description": "VAE-latent control-video conditioning for Wan 2.2 VACE.",
+            "field_kind": "output",
+            "title": "VACE Condition",
+            "ui_hidden": false
+          },
+          "type": {
+            "const": "wan_vace_condition_output",
+            "default": "wan_vace_condition_output",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["output_meta", "vace_condition", "type", "type"],
+        "title": "WanVaceConditioningOutput",
+        "type": "object"
+      },
+      "WanVaceDenoiseInvocation": {
+        "category": "latents",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Run the Wan 2.2 VACE denoising loop, guided by a control video.\n\nThe output is a 5D ``[1, C, T_lat, H/8, W/8]`` latent tensor ready for\n:class:`WanLatentsToVideoInvocation` to VAE-decode and encode as MP4.\n\nRequires a VACE-capable transformer (e.g. Wan2.2-VACE-Fun-A14B). Load it\nthe same way as T2V/I2V A14B: dual-expert (high + low noise) via\n``wan_model_loader``.",
+        "node_pack": "invokeai",
+        "properties": {
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "transformer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WanTransformerField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Wan VACE transformer field (e.g. Wan2.2-VACE-Fun-A14B, dual-expert).",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_required": true,
+            "title": "Transformer"
+          },
+          "positive_conditioning": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WanConditioningField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Positive conditioning tensor",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_required": true
+          },
+          "negative_conditioning": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WanConditioningField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Negative conditioning tensor",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_default": null,
+            "orig_required": false
+          },
+          "vace_condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WanVaceConditioningField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Control-video (VAE-latent) conditioning for Wan 2.2 VACE.",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_required": true,
+            "title": "VACE Condition"
+          },
+          "conditioning_scale": {
+            "default": 1.0,
+            "description": "Strength of the control-video guidance. 1.0 matches the Wan reference; lower values loosen adherence to the control video's structure.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0.0,
+            "orig_default": 1.0,
+            "orig_required": false,
+            "title": "Conditioning Scale",
+            "type": "number"
+          },
+          "guidance_scale": {
+            "default": 5.0,
+            "description": "Classifier-free guidance scale. Wan 2.2 video reference uses 5.0 for the high-noise expert and 4.0 for the low-noise expert.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 1.0,
+            "orig_default": 5.0,
+            "orig_required": false,
+            "title": "Guidance Scale",
+            "type": "number"
+          },
+          "guidance_scale_low_noise": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 4.0,
+            "description": "Optional separate CFG scale for the low-noise expert (Wan 2.2 A14B only). Values below 1.0 fall back to the primary 'Guidance Scale'.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 4.0,
+            "orig_required": false,
+            "title": "Guidance Scale (Low Noise)"
+          },
+          "width": {
+            "default": 832,
+            "description": "Width of the generated video.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "multipleOf": 16,
+            "orig_default": 832,
+            "orig_required": false,
+            "title": "Width",
+            "type": "integer"
+          },
+          "height": {
+            "default": 480,
+            "description": "Height of the generated video.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "multipleOf": 16,
+            "orig_default": 480,
+            "orig_required": false,
+            "title": "Height",
+            "type": "integer"
+          },
+          "num_frames": {
+            "default": 81,
+            "description": "Number of output frames. Must satisfy (num_frames - 1) %% 4 == 0 so the latent temporal dim divides cleanly. Must match the paired wan_vace_video_encode node.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 5,
+            "orig_default": 81,
+            "orig_required": false,
+            "title": "Number of Frames",
+            "type": "integer"
+          },
+          "steps": {
+            "default": 40,
+            "description": "Number of denoising steps.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 40,
+            "orig_required": false,
+            "title": "Steps",
+            "type": "integer"
+          },
+          "seed": {
+            "default": 0,
+            "description": "Randomness seed for reproducibility.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 0,
+            "orig_required": false,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "type": {
+            "const": "wan_vace_denoise",
+            "default": "wan_vace_denoise",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["video", "wan", "vace", "v2v"],
+        "title": "Denoise Video (VACE) - Wan 2.2",
+        "type": "object",
+        "version": "1.1.1",
+        "output": {
+          "$ref": "#/components/schemas/LatentsOutput"
+        }
+      },
+      "WanVaceLoopPrepInvocation": {
+        "category": "video",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Trims/crops/resizes a source video (and optional start/end anchor images) onto one\nconsistent canvas, ready for DWPose/Depth extraction and ``wan_vace_pose_depth_generate``.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Source video to trim/crop/resize.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "start_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional start anchor image.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": null,
+            "orig_required": false
+          },
+          "end_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional end anchor image.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": null,
+            "orig_required": false
+          },
+          "num_source_frames": {
+            "default": 49,
+            "description": "Number of frames to keep from the source video.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 1,
+            "orig_default": 49,
+            "orig_required": false,
+            "title": "Num Source Frames",
+            "type": "integer"
+          },
+          "source_start_frame_index": {
+            "default": 0,
+            "description": "Frame index in the source video to start trimming from.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0,
+            "orig_default": 0,
+            "orig_required": false,
+            "title": "Source Start Frame Index",
+            "type": "integer"
+          },
+          "ratio_source": {
+            "default": "video",
+            "description": "Which input's aspect ratio to keep. 'start_image' requires start_image to be set; the video is then cropped (person-centered) to match it instead of the other way around.",
+            "enum": ["video", "start_image"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "video",
+            "orig_required": false,
+            "title": "Ratio Source",
+            "type": "string"
+          },
+          "target_resolution": {
+            "default": "720p",
+            "description": "Short-side resolution preset (same convention as Wan Ideal Dimensions).",
+            "enum": ["480p", "720p", "1080p"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "720p",
+            "orig_required": false,
+            "title": "Target Resolution",
+            "type": "string",
+            "ui_choice_labels": {
+              "1080p": "1080p (extrapolated \u2014 not a Wan training size)",
+              "480p": "480p (Wan native)",
+              "720p": "720p (Wan native, default)"
+            }
+          },
+          "rounding": {
+            "default": "nearest",
+            "description": "How to snap the computed resolution to the 16px Wan pixel grid.",
+            "enum": ["nearest", "floor", "ceiling"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "nearest",
+            "orig_required": false,
+            "title": "Rounding",
+            "type": "string"
+          },
+          "type": {
+            "const": "wan_vace_loop_prep",
+            "default": "wan_vace_loop_prep",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["video", "wan", "vace", "pose", "depth", "prep"],
+        "title": "VACE Loop Prep - Wan 2.2",
+        "type": "object",
+        "version": "1.2.0",
+        "output": {
+          "$ref": "#/components/schemas/WanVaceLoopPrepOutput"
+        }
+      },
+      "WanVaceLoopPrepOutput": {
+        "class": "output",
+        "description": "Output of ``wan_vace_loop_prep``: a trimmed/cropped/resized source video plus matching\nstart/end anchor images, all sharing one resolved width/height ready for the pose/depth\npreprocessors and ``wan_vace_pose_depth_generate``.",
+        "properties": {
+          "video": {
+            "$ref": "#/components/schemas/VideoField",
+            "description": "Trimmed, cropped, and resized source video.",
+            "field_kind": "output",
+            "ui_hidden": false
+          },
+          "start_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cropped/resized start anchor image, if provided.",
+            "field_kind": "output",
+            "ui_hidden": false
+          },
+          "end_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cropped/resized end anchor image, if provided.",
+            "field_kind": "output",
+            "ui_hidden": false
+          },
+          "start_image_video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "start_image held static and repeated for the full clip duration, if start_image was provided -- feed this (instead of video) into a depth preprocessor to keep the scene/viewpoint anchored to the start image while pose (from video) still carries the motion.",
+            "field_kind": "output",
+            "ui_hidden": false
+          },
+          "width": {
+            "description": "Resolved output width in pixels.",
+            "field_kind": "output",
+            "title": "Width",
+            "type": "integer",
+            "ui_hidden": false
+          },
+          "height": {
+            "description": "Resolved output height in pixels.",
+            "field_kind": "output",
+            "title": "Height",
+            "type": "integer",
+            "ui_hidden": false
+          },
+          "num_frames": {
+            "description": "Number of frames in the trimmed video.",
+            "field_kind": "output",
+            "title": "Num Frames",
+            "type": "integer",
+            "ui_hidden": false
+          },
+          "type": {
+            "const": "wan_vace_loop_prep_output",
+            "default": "wan_vace_loop_prep_output",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "output_meta",
+          "video",
+          "start_image",
+          "end_image",
+          "start_image_video",
+          "width",
+          "height",
+          "num_frames",
+          "type",
+          "type"
+        ],
+        "title": "WanVaceLoopPrepOutput",
+        "type": "object"
+      },
+      "WanVacePoseDepthGenerateInvocation": {
+        "category": "latents",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generate a video guided by a pose+depth control video, anchored to start/end images,\ndenoised in overlapping temporal cycles, with an optional seamless loop bridge.\n\n``control_video``/``width``/``height``/``num_frames`` should come from ``wan_vace_loop_prep``\n(directly, or via the pose/depth extraction + ``vace_control_blend`` chain wired after it) so\nevery input already shares one canvas. ``start_image``/``end_image`` should be\n``wan_vace_loop_prep``'s own (already cropped/resized) outputs, not the original uploads.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "transformer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WanTransformerField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Wan VACE transformer field (e.g. Wan2.2-VACE-Fun-A14B, dual-expert).",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_required": true,
+            "title": "Transformer"
+          },
+          "positive_conditioning": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WanConditioningField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Positive conditioning tensor",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_required": true
+          },
+          "negative_conditioning": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WanConditioningField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Negative conditioning tensor",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_default": null,
+            "orig_required": false
+          },
+          "vae": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VAEField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "VAE",
+            "field_kind": "input",
+            "input": "connection",
+            "orig_required": true,
+            "title": "VAE"
+          },
+          "control_video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Composited pose+depth control video (e.g. from vace_control_blend), already at width x height x num_frames.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "start_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Reference photo for the subject's identity/appearance (VACE reference_images channel). By default this is guidance only -- the model still generates frame 0 itself, following the control video's pose there. Enable pixel_anchor_start_end to instead splice this image in verbatim as the literal first frame.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": null,
+            "orig_required": false
+          },
+          "end_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Same as start_image but anchoring the end of the clip (or the loop bridge's target, if build_loop_bridge is enabled).",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": null,
+            "orig_required": false
+          },
+          "pixel_anchor_start_end": {
+            "default": false,
+            "description": "If enabled, splice start_image/end_image in verbatim as the output's literal first/last frame (raw pixels, VACE mask forced inactive there) instead of letting the model generate them following the control video's own pose/motion there. Has no effect on the loop bridge cycle (when build_loop_bridge is on), which always pixel-anchors to close the loop.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": false,
+            "orig_required": false,
+            "title": "Pixel Anchor Start End",
+            "type": "boolean"
+          },
+          "width": {
+            "default": 832,
+            "description": "Canvas width (must match control_video).",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "multipleOf": 16,
+            "orig_default": 832,
+            "orig_required": false,
+            "title": "Width",
+            "type": "integer"
+          },
+          "height": {
+            "default": 480,
+            "description": "Canvas height (must match control_video).",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "multipleOf": 16,
+            "orig_default": 480,
+            "orig_required": false,
+            "title": "Height",
+            "type": "integer"
+          },
+          "num_frames": {
+            "default": 49,
+            "description": "Total frame count (must match control_video).",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 49,
+            "orig_required": false,
+            "title": "Num Frames",
+            "type": "integer"
+          },
+          "frames_per_cycle": {
+            "default": 49,
+            "description": "Frames denoised per cycle. Must satisfy (n - 1) %% 4 == 0. Videos longer than this are split into overlapping cycles, same as tile_num_frames on the tiled upscaler.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 5,
+            "orig_default": 49,
+            "orig_required": false,
+            "title": "Frames Per Cycle",
+            "type": "integer"
+          },
+          "cycle_crossfade": {
+            "default": 8,
+            "description": "Overlap (frames) between adjacent cycles, anchored + crossfaded for continuity.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0,
+            "orig_default": 8,
+            "orig_required": false,
+            "title": "Cycle Crossfade",
+            "type": "integer"
+          },
+          "conditioning_scale": {
+            "default": 1.0,
+            "description": "Strength of the control-video branch (pose/depth/whatever was blended into control_video), applied per VACE layer inside the transformer. Reference VACE workflows keep this at 1.0; camera stability comes from the control video's own content, not from turning this down. Does not affect start/end image anchoring -- see reference_conditioning_scale for that.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0.0,
+            "orig_default": 1.0,
+            "orig_required": false,
+            "title": "Conditioning Scale",
+            "type": "number"
+          },
+          "reference_conditioning_scale": {
+            "default": 1.0,
+            "description": "Strength of the reference-image anchor (start_image/end_image, VACE's dedicated identity channel) independently of conditioning_scale's control-video branch -- e.g. raise this to push appearance/background fidelity to the reference photo(s) harder without also stiffening pose/motion guidance. Applied position-wise on the VACE residual injection itself (not on the encoded reference content), so reference and control-video frames keep influencing each other through the VACE blocks' own attention while still getting independently-weighted contributions to the output.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0.0,
+            "orig_default": 1.0,
+            "orig_required": false,
+            "title": "Reference Conditioning Scale",
+            "type": "number"
+          },
+          "guidance_scale": {
+            "default": 5.0,
+            "description": "Classifier-free guidance scale.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 1.0,
+            "orig_default": 5.0,
+            "orig_required": false,
+            "title": "Guidance Scale",
+            "type": "number"
+          },
+          "guidance_scale_low_noise": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 4.0,
+            "description": "Optional separate CFG scale for the low-noise expert.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 4.0,
+            "orig_required": false,
+            "title": "Guidance Scale Low Noise"
+          },
+          "steps": {
+            "default": 40,
+            "description": "Number of denoising steps per cycle.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 40,
+            "orig_required": false,
+            "title": "Steps",
+            "type": "integer"
+          },
+          "seed": {
+            "default": 0,
+            "description": "Base randomness seed; each cycle derives its own seed from this.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 0,
+            "orig_required": false,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "flow_shift": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 16.0,
+            "description": "The flow-matching schedule's exponential shift. Defaults to 16.0, the official VACE inference scripts' hard-coded value (both the CLI and Gradio demo override the base model's own generate() default of 5.0/3.0 with 16 specifically for VACE) -- a much higher shift than plain T2V/I2V spends far more of the trajectory at high noise, which is where structural conditioning (pose/control video, identity reference) actually gets decided. Leave unset (None) to fall back to the base checkpoint's plain T2V/I2V default instead.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 16.0,
+            "orig_required": false,
+            "title": "Flow Shift"
+          },
+          "sampler": {
+            "default": "unipc",
+            "description": "Solver algorithm + sigma schedule. This fork defaults to UniPC (unset scheduler config, e.g. GGUF checkpoints). Reference ComfyUI pipelines using the same distillation LoRA stack were found using SA-Solver instead, with either a linear (\"simple\") or KL-optimal (\"kl_optimal\", ComfyUI's kl_optimal_scheduler -- denser sampling near both ends of the schedule) sigma schedule.",
+            "enum": ["unipc", "sa_solver_simple", "sa_solver_kl_optimal"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "unipc",
+            "orig_required": false,
+            "title": "Sampler",
+            "type": "string"
+          },
+          "use_nag": {
+            "default": false,
+            "description": "Use NAG (Normalized Attention Guidance) instead of classifier-free guidance. NAG blends the positive/negative text conditioning's raw cross-attention output inside every attention block (main blocks AND VACE blocks) rather than blending two full model forward passes' noise predictions -- so it still provides real negative-prompt guidance at guidance_scale=1.0, where CFG's uncond pass is normally skipped entirely. Reference ComfyUI VACE workflows using a 4-step distillation LoRA at cfg=1.0 use this (the fork has no negative guidance at all at cfg=1.0 otherwise). Requires negative_conditioning to be set; ignored for the model's I2V image-context tokens if present (falls back to plain attention there).",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": false,
+            "orig_required": false,
+            "title": "Use Nag",
+            "type": "boolean"
+          },
+          "nag_scale": {
+            "default": 5.0,
+            "description": "NAG guidance scale. Only used when use_nag is on.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 1.0,
+            "orig_default": 5.0,
+            "orig_required": false,
+            "title": "Nag Scale",
+            "type": "number"
+          },
+          "nag_tau": {
+            "default": 2.5,
+            "description": "NAG's guidance-norm clamp threshold. Only used when use_nag is on.",
+            "exclusiveMinimum": 0.0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 2.5,
+            "orig_required": false,
+            "title": "Nag Tau",
+            "type": "number"
+          },
+          "nag_alpha": {
+            "default": 0.25,
+            "description": "NAG's blend factor between guided and unguided attention output. Only used when use_nag is on.",
+            "field_kind": "input",
+            "input": "any",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "orig_default": 0.25,
+            "orig_required": false,
+            "title": "Nag Alpha",
+            "type": "number"
+          },
+          "build_loop_bridge": {
+            "default": true,
+            "description": "If both start_image and end_image are set, generate an extra bridging cycle from the end image back to the start image and fold it into the tail so the output video loops seamlessly. Ignored (no bridge built) if either anchor image is missing.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": true,
+            "orig_required": false,
+            "title": "Build Loop Bridge",
+            "type": "boolean"
+          },
+          "loop_bridge_frames": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Frame count for the loop-bridge cycle. Must satisfy (n - 1) %% 4 == 0. 0 or unset both default to frames_per_cycle (the workflow editor's number input writes 0 rather than leaving an optional field empty, so 0 is treated the same as unset here).",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": null,
+            "orig_required": false,
+            "title": "Loop Bridge Frames"
+          },
+          "fps": {
+            "default": 16,
+            "description": "Frames-per-second for the encoded MP4.",
+            "field_kind": "input",
+            "input": "any",
+            "maximum": 120,
+            "minimum": 1,
+            "orig_default": 16,
+            "orig_required": false,
+            "title": "Fps",
+            "type": "integer"
+          },
+          "type": {
+            "const": "wan_vace_pose_depth_generate",
+            "default": "wan_vace_pose_depth_generate",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["video", "wan", "vace", "pose", "depth", "loop"],
+        "title": "Pose+Depth Video Generation (VACE) - Wan 2.2",
+        "type": "object",
+        "version": "1.8.1",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
       },
       "WanVariantType": {
         "type": "string",
