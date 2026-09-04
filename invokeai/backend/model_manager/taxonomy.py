@@ -222,6 +222,17 @@ class WanVariantType(str, Enum):
     TI2V_5B = "ti2v_5b"
     """Wan 2.2 TI2V-5B - smaller single-transformer model with Wan2.2-VAE (48 latent channels)."""
 
+    VACE = "vace"
+    """Wan 2.2 VACE-Fun-A14B - dual-expert MoE (same 5120 inner_dim / 16-channel base branch as T2V_A14B) with an
+    additional control branch (``vace_blocks`` + ``vace_patch_embedding``, ``vace_in_channels=96``) that consumes
+    VAE-encoded control-video latents for video-to-video / video-guided generation."""
+
+    VACE_2_1 = "vace_2_1"
+    """Wan 2.1 VACE-14B - single dense transformer (no dual-expert MoE), same 5120 inner_dim / 16-channel base
+    branch and vace_blocks control branch as VACE. Shape-identical to VACE at the tensor level; the two are only
+    distinguished by filename/metadata at import time, since Wan 2.1 and Wan 2.2 share this checkpoint's key
+    layout. Unlike VACE, this is never paired with a low-noise expert."""
+
 
 class WanLoRAVariantType(str, Enum):
     """Wan 2.2 LoRA variants, identifying which model family a LoRA targets.

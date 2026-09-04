@@ -178,6 +178,15 @@ class LayerPatcher:
             elif LayerPatcher._is_any_part_of_layer_on_cpu(module):
                 use_sidecar_patching = True
 
+            if use_sidecar_patching and not hasattr(module, "add_patch"):
+                # Some modules (e.g. Wan's attention RMSNorm, which isn't part of the
+                # quantization/streaming CustomModuleMixin wrapper protocol) can't accept a
+                # sidecar patch even when the CPU-residency heuristic above would prefer one.
+                # Direct patching works for any nn.Module with a matching named parameter, and
+                # the params affected here are small norm-weight vectors, so the extra resident
+                # copy direct patching implies is negligible.
+                use_sidecar_patching = False
+
             if use_sidecar_patching:
                 LayerPatcher._apply_model_layer_wrapper_patch(
                     module_to_patch=module,
@@ -217,7 +226,14 @@ class LayerPatcher:
     ):
         # All of the LoRA weight calculations will be done on the same device as the module weight.
         # (Performance will be best if this is a CUDA device.)
-        first_param = next(module_to_patch.parameters())
+        first_param = next(module_to_patch.parameters(), None)
+        if first_param is None:
+            # The patch targets a module with no learnable parameters at all (e.g. a Wan
+            # RMSNorm with elementwise_affine=False) -- the LoRA's diff for this layer simply
+            # doesn't apply to this checkpoint's architecture. Skip it rather than crash.
+            logger = InvokeAILogger.get_logger(LayerPatcher.__name__)
+            logger.warning(f"Skipping LoRA patch for module with no parameters: {module_to_patch_key}")
+            return
         device = first_param.device
         dtype = first_param.dtype
 

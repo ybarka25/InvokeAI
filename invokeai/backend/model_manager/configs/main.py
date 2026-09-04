@@ -1844,7 +1844,8 @@ def _detect_wan_variant_from_state_dict(state_dict: dict[str | int, Any]) -> Wan
     ``patch_embedding.weight`` has shape ``[inner_dim, in_channels, T, H, W]``;
     ``in_channels`` uniquely identifies the Wan 2.2 variant:
 
-    - 16 → T2V-A14B (noise latents only).
+    - 16 → T2V-A14B (noise latents only), or VACE-Fun-A14B if ``vace_blocks.*``
+      keys are also present (same base branch shape, plus a control branch).
     - 36 → I2V-A14B (16 noise + 16 ref-image latents + 4 first-frame mask,
       concatenated along the channel dim — see diffusers
       ``WanImageToVideoPipeline.prepare_latents``).
@@ -1856,6 +1857,12 @@ def _detect_wan_variant_from_state_dict(state_dict: dict[str | int, Any]) -> Wan
     if shape is None or len(shape) < 2:
         return None
     inner_dim, in_channels = shape[0], shape[1]
+
+    # VACE checks first: its base branch is shape-identical to plain T2V-A14B
+    # (in_channels=16, inner_dim=5120), so it would otherwise be misdetected as
+    # T2V-A14B and loaded without its control branch.
+    if in_channels == 16 and inner_dim == 5120 and any(str(key).startswith("vace_blocks.") for key in state_dict):
+        return WanVariantType.VACE
 
     # in_channels alone is ambiguous outside the three supported releases: the wider
     # Wan family reuses these channel counts at other widths (Fun-Control-14B is
@@ -1915,11 +1922,11 @@ def _find_wan_2_1_marker(state_dict: dict[str | int, Any]) -> str | None:
       36-channel model carrying an image embedder is Wan 2.1.
     * **1536-dim inner width** — the Wan 2.1 T2V-1.3B model. The Wan 2.2 family is
       5120 (A14B) or 3072 (TI2V-5B).
-    * **VACE blocks** (``vace_blocks.*``) — the Wan 2.1 VACE editing variant, which
-      needs a control branch InvokeAI's Wan pipeline doesn't drive.
 
     Wan 2.1 T2V-14B is *not* detectable this way: it is shape-identical to a single
-    Wan 2.2 A14B expert. Callers that care fall back to the filename/metadata gate.
+    Wan 2.2 A14B expert. The same is true of Wan 2.1 VACE-14B vs. Wan 2.2
+    VACE-Fun-A14B: both are 5120-wide with ``vace_blocks.*``. Callers that care fall
+    back to the filename/metadata gate for both ambiguous cases.
     """
     keys = state_dict.keys()
     image_embedder_markers = ("img_emb.proj.0.weight", "condition_embedder.image_embedder.norm1.weight")
@@ -1975,9 +1982,6 @@ def _find_unsupported_wan_variant_marker(state_dict: dict[str | int, Any]) -> st
             "state dict has a control-adapter branch, which belongs to the Wan Fun-Control family; "
             "camera and control conditioning are not supported yet"
         )
-
-    if has("vace_blocks."):
-        return "state dict has VACE control blocks, and VACE models are not supported yet"
 
     return None
 
@@ -2137,11 +2141,13 @@ def _resolve_wan_expert(
     whitelist that excludes it — so in practice a mis-detected expert can only be
     corrected by renaming the file and re-importing.
 
-    TI2V-5B is a single-transformer model, so the expert is meaningless there and is
-    pinned to 'none'. That is not cosmetic: the frontend's low-noise expert picker
-    selects on ``expert == 'low'``, so a TI2V-5B file whose name happens to contain a
-    bare ``low`` (``...-5B-lowVRAM``, ``...-Turbo-lowSteps``) would otherwise be
-    offered as an A14B partner expert it can never be.
+    TI2V-5B and VACE_2_1 are single-transformer models, so the expert is meaningless
+    there and is pinned to 'none'. That is not cosmetic: the frontend's low-noise
+    expert picker selects on ``expert == 'low'``, so a TI2V-5B file whose name happens
+    to contain a bare ``low`` (``...-5B-lowVRAM``, ``...-Turbo-lowSteps``) would
+    otherwise be offered as an A14B partner expert it can never be. Wan 2.1 VACE-14B
+    is a single dense model (unlike Wan 2.2 VACE-Fun-A14B's dual-expert MoE), so the
+    same reasoning applies to it.
 
     Metadata is consulted only as a fallback, not as the primary signal, even though
     it is the more trustworthy of the two. Renaming a file is the one lever a user
@@ -2159,7 +2165,7 @@ def _resolve_wan_expert(
     if explicit_expert is not None:
         return explicit_expert  # type: ignore[no-any-return]
 
-    if variant == WanVariantType.TI2V_5B:
+    if variant in (WanVariantType.TI2V_5B, WanVariantType.VACE_2_1):
         return "none"
 
     expert = _detect_wan_expert(mod.path.stem)
@@ -2213,19 +2219,31 @@ class Main_GGUF_Wan_Config(Checkpoint_Config_Base, Main_Config_Base, Config_Base
         normalized_identity = "".join(
             character for character in f"{mod.path.stem} {gguf_name}".lower() if character.isalnum()
         )
-        if "wan21" in normalized_identity:
-            raise NotAMatchError("Wan 2.1 GGUF models are not supported by the Wan 2.2 loader")
-        # A misnamed Wan 2.1 GGUF slips past the name check above; the architectural
-        # markers don't care what the file is called.
-        wan_2_1_reason = _find_wan_2_1_marker(sd)
-        if wan_2_1_reason is not None:
-            raise NotAMatchError(f"Wan 2.1 GGUF models are not supported by the Wan 2.2 loader: {wan_2_1_reason}")
 
         explicit_variant = override_fields.pop("variant", None)
-        variant = explicit_variant or _detect_wan_variant_from_state_dict(sd)
+        detected_variant = explicit_variant or _detect_wan_variant_from_state_dict(sd)
+
+        if detected_variant == WanVariantType.VACE and "wan21" in normalized_identity:
+            # Wan 2.1 VACE-14B is shape-identical to Wan 2.2 VACE-Fun-A14B (both
+            # 5120-wide with vace_blocks.*, see _find_wan_2_1_marker) -- the filename
+            # is the only signal that tells them apart.
+            variant = WanVariantType.VACE_2_1
+        else:
+            if "wan21" in normalized_identity:
+                raise NotAMatchError("Wan 2.1 GGUF models are not supported by the Wan 2.2 loader")
+            # A misnamed Wan 2.1 GGUF slips past the name check above; the architectural
+            # markers don't care what the file is called.
+            wan_2_1_reason = _find_wan_2_1_marker(sd)
+            if wan_2_1_reason is not None:
+                raise NotAMatchError(f"Wan 2.1 GGUF models are not supported by the Wan 2.2 loader: {wan_2_1_reason}")
+            variant = detected_variant
+
         if variant is None:
             raise NotAMatchError("could not determine Wan variant from state dict")
-        if variant in (WanVariantType.T2V_A14B, WanVariantType.I2V_A14B) and "wan22" not in normalized_identity:
+        if (
+            variant in (WanVariantType.T2V_A14B, WanVariantType.I2V_A14B, WanVariantType.VACE)
+            and "wan22" not in normalized_identity
+        ):
             raise NotAMatchError("Wan A14B GGUF filename or metadata must identify the model as Wan 2.2")
 
         expert = _resolve_wan_expert(mod, override_fields, variant)
@@ -2292,17 +2310,28 @@ class Main_Checkpoint_Wan_Config(Checkpoint_Config_Base, Main_Config_Base, Confi
         # version from the filename, and rejecting them was the whole complaint in
         # #9463. The residual ambiguity is Wan 2.1 T2V-14B, which is shape-identical
         # to a Wan 2.2 A14B expert — that one is caught by the explicit "wan2.1" name
-        # check below, and otherwise imports as A14B.
+        # check below, and otherwise imports as A14B. VACE-14B has the same residual
+        # ambiguity vs. VACE-Fun-A14B, but for VACE the "wan2.1" name signal routes
+        # to the dedicated VACE_2_1 variant below instead of a hard reject.
         wan_2_1_reason = _find_wan_2_1_marker(sd)
         if wan_2_1_reason is not None:
             raise NotAMatchError(f"Wan 2.1 models are not supported by the Wan 2.2 loader: {wan_2_1_reason}")
 
         normalized_identity = "".join(character for character in mod.path.stem.lower() if character.isalnum())
-        if "wan21" in normalized_identity:
-            raise NotAMatchError("Wan 2.1 models are not supported by the Wan 2.2 loader")
 
         explicit_variant = override_fields.pop("variant", None)
-        variant = explicit_variant or _detect_wan_variant_from_state_dict(sd)
+        detected_variant = explicit_variant or _detect_wan_variant_from_state_dict(sd)
+
+        if detected_variant == WanVariantType.VACE and "wan21" in normalized_identity:
+            # Wan 2.1 VACE-14B is shape-identical to Wan 2.2 VACE-Fun-A14B (both
+            # 5120-wide with vace_blocks.*) -- the filename is the only signal that
+            # tells them apart.
+            variant = WanVariantType.VACE_2_1
+        else:
+            if "wan21" in normalized_identity:
+                raise NotAMatchError("Wan 2.1 models are not supported by the Wan 2.2 loader")
+            variant = detected_variant
+
         if variant is None:
             raise NotAMatchError("could not determine Wan variant from state dict")
 
@@ -2337,13 +2366,14 @@ class Main_Diffusers_Wan_Config(Diffusers_Config_Base, Main_Config_Base, Config_
 
         raise_for_override_fields(cls, override_fields)
 
-        # Wan repos ship with WanPipeline (T2V) or WanImageToVideoPipeline (I2V/TI2V).
-        # Either class name is sufficient to identify a Wan diffusers model.
+        # Wan repos ship with WanPipeline (T2V), WanImageToVideoPipeline (I2V/TI2V),
+        # or WanVACEPipeline (VACE-Fun-A14B control/video-guided generation).
         raise_for_class_name(
             common_config_paths(mod.path),
             {
                 "WanPipeline",
                 "WanImageToVideoPipeline",
+                "WanVACEPipeline",
             },
         )
 
@@ -2393,8 +2423,17 @@ class Main_Diffusers_Wan_Config(Diffusers_Config_Base, Main_Config_Base, Config_
           transformer ``in_channels=36`` (text + VAE-encoded reference image
           + first-frame mask concatenated along the channel dim).
         - TI2V-5B: single transformer, Wan2.2-VAE (z_dim=48).
+        - VACE-Fun-A14B: dual transformer experts, ``transformer/config.json``
+          declares ``WanVACETransformer3DModel`` (control branch on top of the
+          plain T2V-A14B base, ``in_channels=16``).
+        - VACE_2_1 (Wan 2.1 VACE-14B): single transformer declaring
+          ``WanVACETransformer3DModel``. Shape-identical to VACE-Fun-A14B; the only
+          reason this lands here instead of the VACE branch above is the absence of
+          a sibling ``transformer_2/`` directory (no dual-expert MoE).
         """
         if has_dual_expert:
+            if cls._transformer_class_name(mod) == "WanVACETransformer3DModel":
+                return WanVariantType.VACE
             # Disambiguate T2V vs I2V via the transformer's input channel count.
             # Wan 2.2 I2V uses VAE-latent concatenation: 16 noise + 16 ref-image
             # latents + 4 first-frame mask = 36. (Wan 2.1 I2V used CLIP-vision
@@ -2403,6 +2442,9 @@ class Main_Diffusers_Wan_Config(Diffusers_Config_Base, Main_Config_Base, Config_
             if in_channels == 36:
                 return WanVariantType.I2V_A14B
             return WanVariantType.T2V_A14B
+
+        if cls._transformer_class_name(mod) == "WanVACETransformer3DModel":
+            return WanVariantType.VACE_2_1
 
         # Single-transformer model: distinguish TI2V-5B from any future single-expert
         # A14B-derived release by inspecting the VAE latent dimension.
@@ -2438,6 +2480,16 @@ class Main_Diffusers_Wan_Config(Diffusers_Config_Base, Main_Config_Base, Config_
             return int(value) if value is not None else None
         except (TypeError, ValueError):
             return None
+
+    @staticmethod
+    def _transformer_class_name(mod: ModelOnDisk) -> str | None:
+        """Read ``_class_name`` from ``transformer/config.json``, if present."""
+        try:
+            transformer_config = get_config_dict_or_raise(mod.path / "transformer" / "config.json")
+        except NotAMatchError:
+            return None
+        value = transformer_config.get("_class_name")
+        return value if isinstance(value, str) else None
 
 
 class Main_Checkpoint_Anima_Config(Checkpoint_Config_Base, Main_Config_Base, Config_Base):
