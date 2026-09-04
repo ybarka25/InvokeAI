@@ -18917,6 +18917,48 @@
           "$ref": "#/components/schemas/ImageOutput"
         }
       },
+      "CharacterAlignOutput": {
+        "class": "output",
+        "description": "Output of ``wan_character_align``: a photo and a video, one of them cropped/padded/resized\nso its detected character matches the other's character in on-screen position and scale.",
+        "properties": {
+          "aligned_photo": {
+            "$ref": "#/components/schemas/ImageField",
+            "description": "Photo, aligned to the video if the video was the ratio source.",
+            "field_kind": "output",
+            "ui_hidden": false
+          },
+          "aligned_video": {
+            "$ref": "#/components/schemas/VideoField",
+            "description": "Video, aligned to the photo if the photo was the ratio source.",
+            "field_kind": "output",
+            "ui_hidden": false
+          },
+          "width": {
+            "description": "Resolved shared output width in pixels.",
+            "field_kind": "output",
+            "title": "Width",
+            "type": "integer",
+            "ui_hidden": false
+          },
+          "height": {
+            "description": "Resolved shared output height in pixels.",
+            "field_kind": "output",
+            "title": "Height",
+            "type": "integer",
+            "ui_hidden": false
+          },
+          "type": {
+            "const": "character_align_output",
+            "default": "character_align_output",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["output_meta", "aligned_photo", "aligned_video", "width", "height", "type", "type"],
+        "title": "CharacterAlignOutput",
+        "type": "object"
+      },
       "Classification": {
         "description": "The classification of an Invocation.\n- `Stable`: The invocation, including its inputs/outputs and internal logic, is stable. You may build workflows with it, having confidence that they will not break because of a change in this invocation.\n- `Beta`: The invocation is not yet stable, but is planned to be stable in the future. Workflows built around this invocation may break, but we are committed to supporting this invocation long-term.\n- `Prototype`: The invocation is not yet stable and may be removed from the application at any time. Workflows built around this invocation may break, and we are *not* committed to supporting this invocation.\n- `Deprecated`: The invocation is deprecated and may be removed in a future version.\n- `Internal`: The invocation is not intended for use by end-users. It may be changed or removed at any time, but is exposed for users to play with.\n- `Special`: The invocation is a special case and does not fit into any of the other classifications.",
         "enum": ["stable", "beta", "prototype", "deprecated", "internal", "special"],
@@ -35852,6 +35894,9 @@
                   "$ref": "#/components/schemas/VideoInvocation"
                 },
                 {
+                  "$ref": "#/components/schemas/WanCharacterAlignInvocation"
+                },
+                {
                   "$ref": "#/components/schemas/WanDenoiseInvocation"
                 },
                 {
@@ -36015,6 +36060,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/CalculateImageTilesOutput"
+                },
+                {
+                  "$ref": "#/components/schemas/CharacterAlignOutput"
                 },
                 {
                   "$ref": "#/components/schemas/CogView4ConditioningOutput"
@@ -44390,6 +44438,9 @@
                 "$ref": "#/components/schemas/VideoInvocation"
               },
               {
+                "$ref": "#/components/schemas/WanCharacterAlignInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
               },
               {
@@ -44510,6 +44561,9 @@
               },
               {
                 "$ref": "#/components/schemas/CalculateImageTilesOutput"
+              },
+              {
+                "$ref": "#/components/schemas/CharacterAlignOutput"
               },
               {
                 "$ref": "#/components/schemas/CogView4ConditioningOutput"
@@ -45741,6 +45795,9 @@
                 "$ref": "#/components/schemas/VideoInvocation"
               },
               {
+                "$ref": "#/components/schemas/WanCharacterAlignInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
               },
               {
@@ -46709,6 +46766,9 @@
           "video_frame_extract": {
             "$ref": "#/components/schemas/ImageOutput"
           },
+          "wan_character_align": {
+            "$ref": "#/components/schemas/CharacterAlignOutput"
+          },
           "wan_denoise": {
             "$ref": "#/components/schemas/LatentsOutput"
           },
@@ -47071,6 +47131,7 @@
           "video",
           "video_concat",
           "video_frame_extract",
+          "wan_character_align",
           "wan_denoise",
           "wan_i2l",
           "wan_i2v_ideal_dimensions",
@@ -48007,6 +48068,9 @@
               },
               {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanCharacterAlignInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -49067,6 +49131,9 @@
               },
               {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/WanCharacterAlignInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -89825,6 +89892,198 @@
         "required": ["virtual_board_id", "board_name", "date", "image_count", "asset_count"],
         "title": "VirtualSubBoardDTO",
         "description": "A virtual sub-board computed from image/video metadata, not stored in the database."
+      },
+      "WanCharacterAlignInvocation": {
+        "category": "video",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Detects the character in a photo and in a video's first frame (Grounding DINO), then\ncrops/pads/resizes whichever side isn't the ratio source so both characters land at the\nsame on-screen position and the same scale.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Reference photo of the character.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Source video; only its first frame is used for detection.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "ratio_source": {
+            "default": "photo",
+            "description": "Which side's aspect ratio (and resolution) is kept as-is. The other side is cropped/padded/resized to match its character's on-screen position and scale.",
+            "enum": ["photo", "video"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "photo",
+            "orig_required": false,
+            "title": "Ratio Source",
+            "type": "string"
+          },
+          "detect_prompt": {
+            "default": "person.",
+            "description": "Grounding DINO text prompt for the character (lowercase, end with '.').",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "person.",
+            "orig_required": false,
+            "title": "Detect Prompt",
+            "type": "string"
+          },
+          "detection_model": {
+            "default": "grounding-dino-tiny",
+            "description": "Grounding DINO model size.",
+            "enum": ["grounding-dino-tiny", "grounding-dino-base"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "grounding-dino-tiny",
+            "orig_required": false,
+            "title": "Detection Model",
+            "type": "string"
+          },
+          "detection_threshold": {
+            "default": 0.3,
+            "description": "Grounding DINO detection threshold.",
+            "field_kind": "input",
+            "input": "any",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "orig_default": 0.3,
+            "orig_required": false,
+            "title": "Detection Threshold",
+            "type": "number"
+          },
+          "scale_reference": {
+            "default": "height",
+            "description": "Which bounding-box dimension is matched for zoom level. Height suits full-body/portrait shots.",
+            "enum": ["height", "width"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "height",
+            "orig_required": false,
+            "title": "Scale Reference",
+            "type": "string"
+          },
+          "target_resolution": {
+            "default": "720p",
+            "description": "Short-side resolution preset for the shared output canvas.",
+            "enum": ["480p", "720p", "1080p"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "720p",
+            "orig_required": false,
+            "title": "Target Resolution",
+            "type": "string",
+            "ui_choice_labels": {
+              "1080p": "1080p (extrapolated \u2014 not a Wan training size)",
+              "480p": "480p (Wan native)",
+              "720p": "720p (Wan native, default)"
+            }
+          },
+          "rounding": {
+            "default": "nearest",
+            "description": "How to snap the resolution to the 16px Wan pixel grid.",
+            "enum": ["nearest", "floor", "ceiling"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "nearest",
+            "orig_required": false,
+            "title": "Rounding",
+            "type": "string"
+          },
+          "type": {
+            "const": "wan_character_align",
+            "default": "wan_character_align",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["image", "video", "grounding-dino", "align", "crop"],
+        "title": "Character Align (Photo <-> Video)",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/CharacterAlignOutput"
+        }
       },
       "WanConditioningField": {
         "description": "A Wan 2.2 conditioning tensor primitive value.\n\nWan conditioning is the UMT5-XXL hidden state for the prompt plus an attention\nmask marking valid (non-padding) tokens.",

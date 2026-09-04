@@ -626,6 +626,21 @@ class VideoOutput(BaseInvocationOutput):
         )
 
 
+@invocation_output("character_align_output")
+class CharacterAlignOutput(BaseInvocationOutput):
+    """Output of ``wan_character_align``: a photo and a video, one of them cropped/padded/resized
+    so its detected character matches the other's character in on-screen position and scale."""
+
+    aligned_photo: ImageField = OutputField(
+        description="Photo, aligned to the video if the video was the ratio source."
+    )
+    aligned_video: VideoField = OutputField(
+        description="Video, aligned to the photo if the photo was the ratio source."
+    )
+    width: int = OutputField(description="Resolved shared output width in pixels.")
+    height: int = OutputField(description="Resolved shared output height in pixels.")
+
+
 @invocation(
     "video",
     title="Video Primitive",
