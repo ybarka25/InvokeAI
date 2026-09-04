@@ -727,9 +727,7 @@ class WanDenoiseInvocation(BaseInvocation):
                 high_is_quantized=high_is_quantized,
                 low_is_quantized=low_is_quantized,
                 working_mem_bytes=working_mem_bytes,
-                max_resident_model_bytes=(
-                    max_resident_bytes if working_mem_bytes is not None else None
-                ),
+                max_resident_model_bytes=(max_resident_bytes if working_mem_bytes is not None else None),
             )
             exit_stack.callback(swapper.close)
 

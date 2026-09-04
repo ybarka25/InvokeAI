@@ -11,11 +11,11 @@ from invokeai.app.invocations.model import WanT5EncoderField
 from invokeai.app.invocations.primitives import WanConditioningOutput
 from invokeai.app.services.shared.invocation_context import InvocationContext
 from invokeai.backend.model_manager.load.model_cache.utils import get_effective_device
-from invokeai.backend.util.devices import TorchDevice
 from invokeai.backend.stable_diffusion.diffusion.conditioning_data import (
     ConditioningFieldData,
     WanConditioningInfo,
 )
+from invokeai.backend.util.devices import TorchDevice
 
 # Wan models are trained with 512-token text sequences (matches the
 # upstream config.json's ``text_len: 512`` and the WanPipeline.__call__

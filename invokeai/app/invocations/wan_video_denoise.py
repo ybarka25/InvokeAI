@@ -15,6 +15,7 @@ from contextlib import ExitStack
 from typing import Callable, Iterable, Optional
 
 import torch
+from diffusers.models.attention_dispatch import attention_backend
 from tqdm import tqdm
 
 from invokeai.app.invocations.baseinvocation import BaseInvocation, Classification, invocation
@@ -27,8 +28,6 @@ from invokeai.app.invocations.fields import (
 )
 from invokeai.app.invocations.model import WanTransformerField
 from invokeai.app.invocations.primitives import LatentsOutput
-from diffusers.models.attention_dispatch import attention_backend
-
 from invokeai.app.invocations.wan_denoise import (
     WanDenoiseInvocation,
     _ExpertSwapper,
