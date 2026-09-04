@@ -78,91 +78,19 @@ from invokeai.backend.wan.vace_tile_upscale import crossfade_videos, plan_tempor
 
 # --- SA-Solver (Stochastic Adams Solver, NeurIPS 2023) -----------------------------------
 #
-# Ported directly from ComfyUI's ``comfy/k_diffusion/sa_solver.py`` + the ``sample_sa_solver``
-# loop in ``comfy/k_diffusion/sampling.py``, since diffusers' packaged ``SASolverScheduler``
-# (used via the normal ``scheduler.step()`` path) was found to leave the schedule one step
-# short of full denoising with ``use_flow_sigmas``/``final_sigmas_type`` unavailable to fix it
-# from the outside (reproduced: pure-noise output; a post-hoc sigma override to force the
-# final step to 0 also failed -- CONFIRMED_BLACK_FRAMES -- because ComfyUI's algorithm treats
-# "next sigma is exactly 0" as a special terminal case (`x = denoised` directly, no
-# extrapolated update), which diffusers' generic multistep ``step()`` doesn't replicate).
-# This reimplements the actual predictor-corrector math against our own CFG/expert-swap loop
-# instead of going through a diffusers ``SchedulerMixin`` at all.
+# Uses diffusers' own SASolverScheduler (Apache-2.0) for the actual predictor-corrector math
+# via its normal .step() method -- see _run_sa_solver_vace_denoise_loop below for the one
+# workaround this needs: SASolverScheduler's flow-matching sigma construction
+# (use_flow_sigmas=True) has no final_sigmas_type option and duplicates the last sigma instead
+# of terminating at 0 (compare its `sigmas = np.concatenate([sigmas, sigmas[-1:]])` to
+# UniPCMultistepScheduler's zero-terminated equivalent), which was leaving this schedule one
+# step short of full denoising. The fix doesn't require reimplementing the solver: the caller
+# supplies its own zero-terminated sigma/timestep schedule (see the call site), and the final
+# transition uses the scheduler's own `convert_model_output()` directly -- the same conversion
+# `step()` would apply internally -- instead of `step()` itself, since stepping all the way to
+# a literal sigma=0 blows up the solver's internal log(alpha/sigma) lambda term.
 #
 # Reference: https://github.com/scxue/SA-Solver (NeurIPS 2023, arXiv:2309.05019).
-
-
-def _sa_solver_half_log_snr(sigma: torch.Tensor) -> torch.Tensor:
-    """log(alpha_t / sigma_t) for a flow-matching (CONST) model: alpha_t = 1 - sigma."""
-    s = sigma.clamp(min=1e-6, max=1.0 - 1e-6)
-    return torch.log((1.0 - s) / s)
-
-
-def _sa_solver_exponential_coeffs(s: torch.Tensor, t: torch.Tensor, solver_order: int, tau_t: float) -> torch.Tensor:
-    tau_mul = 1 + tau_t**2
-    h = t - s
-    p = torch.arange(solver_order, dtype=s.dtype, device=s.device)
-    product_terms_factored = t**p - s**p * (-tau_mul * h).exp()
-    recursive_depth_mat = p.unsqueeze(1) - p.unsqueeze(0)
-    log_factorial = (p + 1).lgamma()
-    recursive_coeff_mat = log_factorial.unsqueeze(1) - log_factorial.unsqueeze(0)
-    if tau_t > 0:
-        recursive_coeff_mat = recursive_coeff_mat - (recursive_depth_mat * math.log(tau_mul))
-    signs = torch.where(recursive_depth_mat % 2 == 0, 1.0, -1.0)
-    recursive_coeff_mat = (recursive_coeff_mat.exp() * signs).tril()
-    return recursive_coeff_mat @ product_terms_factored
-
-
-def _sa_solver_simple_b_coeffs(
-    sigma_next: torch.Tensor,
-    curr_lambdas: torch.Tensor,
-    lambda_s: torch.Tensor,
-    lambda_t: torch.Tensor,
-    tau_t: float,
-    is_corrector_step: bool,
-) -> torch.Tensor:
-    tau_mul = 1 + tau_t**2
-    h = lambda_t - lambda_s
-    alpha_t = sigma_next * lambda_t.exp()
-    if is_corrector_step:
-        b_1 = alpha_t * (0.5 * tau_mul * h)
-        b_2 = alpha_t * (-h * tau_mul).expm1().neg() - b_1
-    else:
-        b_2 = alpha_t * (0.5 * tau_mul * h**2) / (curr_lambdas[-2] - lambda_s)
-        b_1 = alpha_t * (-h * tau_mul).expm1().neg() - b_2
-    return torch.stack([b_2, b_1])
-
-
-def _sa_solver_b_coeffs(
-    sigma_next: torch.Tensor,
-    curr_lambdas: torch.Tensor,
-    lambda_s: torch.Tensor,
-    lambda_t: torch.Tensor,
-    tau_t: float,
-    is_corrector_step: bool,
-) -> torch.Tensor:
-    num_timesteps = curr_lambdas.shape[0]
-    if num_timesteps == 1:
-        # Order-1 fallback (predictor's very first step): plain Euler-in-lambda coefficient.
-        tau_mul = 1 + tau_t**2
-        h = lambda_t - lambda_s
-        alpha_t = sigma_next * lambda_t.exp()
-        return (alpha_t * (-h * tau_mul).expm1().neg()).unsqueeze(0)
-    exp_integral_coeffs = _sa_solver_exponential_coeffs(lambda_s, lambda_t, num_timesteps, tau_t)
-    vandermonde_matrix_t = torch.vander(curr_lambdas, num_timesteps, increasing=True).T
-    lagrange_integrals = torch.linalg.solve(vandermonde_matrix_t, exp_integral_coeffs)
-    alpha_t = sigma_next * lambda_t.exp()
-    return alpha_t * lagrange_integrals
-
-
-def _sa_solver_tau_func(start_sigma: float, end_sigma: float, eta: float = 1.0):
-    def tau(sigma) -> float:
-        if eta <= 0:
-            return 0.0
-        s = float(sigma)
-        return eta if start_sigma >= s >= end_sigma else 0.0
-
-    return tau
 
 
 def _flow_shift_sigma(sigma: float, flow_shift: float) -> float:
@@ -224,17 +152,17 @@ def _run_sa_solver_vace_denoise_loop(
     nag_tau: float = 2.5,
     nag_alpha: float = 0.25,
 ) -> torch.Tensor:
-    """SA-Solver predictor-corrector loop (see module-level comment above) driving the same
-    per-step CFG + dual-expert swap call as ``run_wan_vace_denoise_loop``, in place of a
-    diffusers ``scheduler.step()`` call."""
+    """SA-Solver predictor-corrector loop, driving the same per-step CFG + dual-expert swap
+    call as ``run_wan_vace_denoise_loop`` but stepped by a real ``SASolverScheduler`` (see
+    module-level comment above for the one place this needs to sidestep ``.step()``)."""
+    from diffusers import SASolverScheduler
+
     total_steps = len(sigmas) - 1
     if total_steps <= 0:
         return latents
 
     # diffusers schedulers commonly move .timesteps to `device` on set_timesteps() but leave
-    # .sigmas CPU-resident (it's only used for internal scheduler math) -- move both explicitly
-    # so every tensor derived from them (lambdas, b_coeffs, tau/noise scaling) lands on the same
-    # device as the model outputs (pred_mat) they get tensordot-ed against.
+    # .sigmas CPU-resident (it's only used for internal scheduler math) -- move both explicitly.
     sigmas = sigmas.to(device=device, dtype=torch.float32)
     timesteps = timesteps.to(device=device)
 
@@ -242,12 +170,37 @@ def _run_sa_solver_vace_denoise_loop(
     num_train_timesteps = 1000
     boundary_timestep = transformer_field.boundary_ratio * num_train_timesteps if low_model is not None else None
 
-    lambdas = _sa_solver_half_log_snr(sigmas)
-    start_idx = max(0, int(0.2 * len(sigmas)))
-    end_idx = min(len(sigmas) - 1, int(0.8 * len(sigmas)))
-    tau_func = _sa_solver_tau_func(float(sigmas[start_idx]), float(sigmas[end_idx]), eta=eta)
-    max_used_order = max(predictor_order, corrector_order)
-    generator = torch.Generator(device="cpu").manual_seed(seed)
+    # tau_func controls SA-Solver's stochasticity (SDE vs. ODE); active only in the schedule's
+    # middle 60% (the paper's own recommendation for where added noise helps rather than hurts
+    # convergence), scaled by eta. Receives a *timestep* (0-1000), not a sigma -- that's this
+    # scheduler's own convention, read from self.timestep_list inside .step().
+    start_t = float(timesteps[max(0, int(0.2 * len(timesteps)))])
+    end_t = float(timesteps[min(len(timesteps) - 1, int(0.8 * len(timesteps)))])
+
+    def tau_func(t) -> float:
+        if eta <= 0:
+            return 0.0
+        t = float(t)
+        return eta if min(start_t, end_t) <= t <= max(start_t, end_t) else 0.0
+
+    scheduler = SASolverScheduler(
+        num_train_timesteps=num_train_timesteps,
+        predictor_order=predictor_order,
+        corrector_order=corrector_order,
+        prediction_type="flow_prediction",
+        algorithm_type="data_prediction",
+        lower_order_final=True,
+        tau_func=tau_func,
+    )
+    # SASolverScheduler's own use_flow_sigmas schedule construction has no zero-terminal
+    # option and would leave the last step short of full denoising (see module comment) --
+    # use the caller's own correctly-terminating schedule instead. set_timesteps() first to
+    # initialize the rest of the scheduler's per-run state (model_outputs ring buffer, etc.);
+    # then overwrite just the two schedule tensors.
+    scheduler.set_timesteps(num_inference_steps=total_steps, device=device)
+    scheduler.sigmas = sigmas
+    scheduler.timesteps = timesteps
+    generator = torch.Generator(device="cpu").manual_seed(seed) if eta > 0 else None
 
     def call_model(x: torch.Tensor, t_val: torch.Tensor, sigma_val: torch.Tensor) -> torch.Tensor:
         if low_model is not None and float(t_val) < float(boundary_timestep):
@@ -312,57 +265,23 @@ def _run_sa_solver_vace_denoise_loop(
                     noise_pred = noise_pred_uncond + active_cfg * (noise_pred_cond - noise_pred_uncond)
                 else:
                     noise_pred = noise_pred_cond
-        # Flow-matching (CONST) x0 conversion, matching comfy.model_sampling.CONST.calculate_denoised.
-        return x.to(torch.float32) - sigma_val.to(torch.float32) * noise_pred.to(torch.float32)
+        return noise_pred.to(torch.float32)
 
-    x_pred = latents
     x = latents
-    h = torch.zeros((), dtype=torch.float32)
-    tau_t = 0.0
-    noise = 0.0
-    pred_list: list[torch.Tensor] = []
-    lower_order_to_end = float(sigmas[-1]) == 0.0
-
     for i in range(total_steps):
-        denoised = call_model(x_pred, timesteps[i], sigmas[i])
-        pred_list.append(denoised)
-        pred_list = pred_list[-max_used_order:]
+        noise_pred = call_model(x, timesteps[i], sigmas[i])
 
-        predictor_order_used = min(predictor_order, len(pred_list))
-        if i == 0 or float(sigmas[i + 1]) == 0.0:
-            corrector_order_used = 0
+        # The last transition targets sigmas[-1], which -- per the module comment -- is a real
+        # zero here (unlike SASolverScheduler's own flow-sigmas construction). Stepping a
+        # solver whose internal math runs in lambda = log(alpha/sigma) space straight to
+        # sigma=0 blows up (lambda -> -inf), so take the same shortcut every multistep sampler
+        # does at its terminal step: skip the extrapolated update and use the model's direct
+        # denoised (x0) estimate as the final sample. convert_model_output() is the same
+        # conversion .step() would apply internally before doing that extrapolation.
+        if i == total_steps - 1:
+            x = scheduler.convert_model_output(noise_pred, sample=x)
         else:
-            corrector_order_used = min(corrector_order, len(pred_list))
-
-        if lower_order_to_end:
-            predictor_order_used = min(predictor_order_used, total_steps - 1 - i)
-            corrector_order_used = min(corrector_order_used, total_steps - i)
-
-        if corrector_order_used == 0:
-            x = x_pred
-        else:
-            curr_lambdas = lambdas[i - corrector_order_used + 1 : i + 1]
-            b_coeffs = _sa_solver_b_coeffs(sigmas[i], curr_lambdas, lambdas[i - 1], lambdas[i], tau_t, True)
-            pred_mat = torch.stack(pred_list[-corrector_order_used:], dim=1)
-            corr_res = torch.tensordot(pred_mat, b_coeffs.to(pred_mat.dtype), dims=([1], [0]))
-            x = sigmas[i] / sigmas[i - 1] * torch.exp(-(tau_t**2) * h) * x + corr_res
-            if tau_t > 0:
-                x = x + noise
-
-        if float(sigmas[i + 1]) == 0.0:
-            x = denoised
-        else:
-            tau_t = tau_func(sigmas[i + 1])
-            curr_lambdas = lambdas[i - predictor_order_used + 1 : i + 1]
-            b_coeffs = _sa_solver_b_coeffs(sigmas[i + 1], curr_lambdas, lambdas[i], lambdas[i + 1], tau_t, False)
-            pred_mat = torch.stack(pred_list[-predictor_order_used:], dim=1)
-            pred_res = torch.tensordot(pred_mat, b_coeffs.to(pred_mat.dtype), dims=([1], [0]))
-            h = lambdas[i + 1] - lambdas[i]
-            x_pred = sigmas[i + 1] / sigmas[i] * torch.exp(-(tau_t**2) * h) * x + pred_res
-            if tau_t > 0:
-                noise_sample = torch.randn(x.shape, dtype=x.dtype, generator=generator).to(x.device)
-                noise = noise_sample * sigmas[i + 1] * torch.sqrt((-2 * tau_t**2 * h).expm1().neg())
-                x_pred = x_pred + noise
+            x = scheduler.step(noise_pred, timesteps[i], x, generator=generator, return_dict=False)[0]
 
         step_callback(
             PipelineIntermediateState(
