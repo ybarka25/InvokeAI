@@ -14,6 +14,7 @@ so we can verify the swapper hands back the right model and routes the right
 LoRA factory at each step.
 """
 
+from types import SimpleNamespace
 from typing import Iterable, Tuple
 from unittest.mock import patch
 
@@ -108,6 +109,12 @@ class _FakeContext:
 
         self.models = _Models(self)
 
+        class _Config:
+            def get(self) -> SimpleNamespace:
+                return SimpleNamespace(wan_torch_compile=False, wan_torch_compile_scope="block")
+
+        self.config = _Config()
+
 
 def _make_factory(log: list[str], label: str) -> "callable":
     """Build a LoRAIteratorFactory that records each invocation in ``log``."""
@@ -190,8 +197,12 @@ def test_lifecycle_high_only():
         "device-enter:HIGH",
         "lora-factory-call:HIGH",
         "lora-enter",
+        # close: LoRA out -> device out -> force-unload HIGH (the last active expert
+        # isn't left merely unlocked -- close() force-unloads it too, closing the leak
+        # where an ~9GB expert could survive resident across invocation boundaries).
         "lora-exit",
         "device-exit:HIGH",
+        "full-unload:HIGH",
     ]
     assert len(calls) == 1
     assert calls[0]["model"] is high_nn
@@ -245,9 +256,11 @@ def test_lifecycle_dual_expert_swap():
         "device-enter:LOW",
         "lora-factory-call:LOW",
         "lora-enter",
-        # close
+        # close: LoRA out -> device out -> force-unload LOW (the last active expert
+        # isn't left merely unlocked -- close() force-unloads it too).
         "lora-exit",
         "device-exit:LOW",
+        "full-unload:LOW",
     ]
     assert log == expected
     # Two patcher invocations, each bound to the expected model.

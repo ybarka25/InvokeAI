@@ -19056,6 +19056,9 @@ export type components = {
          *         precision: Floating point precision. `float16` will consume half the memory of `float32` but produce slightly lower-quality images. The `auto` setting will guess the proper precision based on your video card and operating system.<br>Valid values: `auto`, `float16`, `bfloat16`, `float32`
          *         sequential_guidance: Whether to calculate guidance in serial instead of in parallel, lowering memory requirements.
          *         wan_memory_optimization: Enable experimental Wan memory optimizations at the cost of slower generation.
+         *         wan_attention_backend: Attention backend used for the Wan transformer's forward pass. `sage` (SageAttention 2, quantized attention kernel) is fastest -- measured ~4x faster than `xformers` at Wan's typical sequence lengths -- but needs a matching prebuilt wheel for the installed torch/CUDA version (e.g. from github.com/woct0rdho/SageAttention/releases); `xformers` is the next-fastest fallback (also needs a matching build, e.g. from download.pytorch.org/whl/cuXXX). Falls back to `native` with a warning if the requested backend's package is unavailable.<br>Valid values: `native`, `xformers`, `sage`
+         *         wan_torch_compile: Compile the Wan transformer with `torch.compile`. See `wan_torch_compile_scope` for the `block` vs `model` tradeoff. At `block` scope this mirrors ComfyUI-KJNodes' TorchCompileModelWanVideoV2 and measured ~24% additional steady-state speedup on top of `wan_attention_backend: sage`, at the cost of a one-time ~40s compilation pass the first time each expert is used at a given resolution/frame-count (recompiles if that shape changes).
+         *         wan_torch_compile_scope: Compilation granularity for `wan_torch_compile`. `block` compiles each transformer block separately -- one graph per block, reused across all 40 (mirrors ComfyUI-KJNodes). `model` compiles the whole transformer as a single graph, which can fuse *across* block boundaries too (not just within each one), at the cost of a much larger one-time compilation pass and correspondingly more VRAM/RAM during that pass.<br>Valid values: `block`, `model`
          *         pid_memory_optimization: Enable experimental PiD decode memory optimizations. Roughly halves the peak activation memory of a PiD decode; in exchange the decoded image changes slightly, because neither the chunked pixel pathway nor the float32 sampler intermediates are bit-exact with the default path.
          *         attention_type: Attention type.<br>Valid values: `auto`, `normal`, `xformers`, `sliced`, `torch-sdp`
          *         attention_slice_size: Slice size, valid when attention_type=="sliced".<br>Valid values: `auto`, `balanced`, `max`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`
@@ -19409,10 +19412,33 @@ export type components = {
             sequential_guidance?: boolean;
             /**
              * Wan Memory Optimization
-             * @description Enable experimental Wan memory optimizations at the cost of slower generation.
+             * @description DEPRECATED, no longer read: previously capped resident Wan transformer weights to a hardcoded 2GiB, which forced ~96% of a GGUF expert to stream from RAM on every op. Superseded by `wan_max_resident_transformer_gb`, which gives the same VRAM/speed tradeoff at a tunable point instead of one crippling fixed value.
              * @default false
              */
             wan_memory_optimization?: boolean;
+            /**
+             * Wan Max Resident Transformer Gb
+             * @description Cap how much of the active Wan transformer expert's weights (~9.2GB for a Q4_K_M A14B expert) stay VRAM-resident; the rest streams from RAM on each op. Leave unset for 100% residency (fastest, needs the most VRAM: weights + activations + `torch.compile` workspace if enabled). Lower this if you hit CUDA OOM instead of enabling more VRAM-hungry features on a smaller GPU -- e.g. ~6-7 out of 9.2GB only streams the last couple GB (small speed cost) but frees several GB of headroom for `wan_torch_compile`'s ~4GB Inductor workspace or a longer/higher-res generation. Values much below ~5GB approach the old hardcoded-2GiB behavior's slowdown.
+             */
+            wan_max_resident_transformer_gb?: number | null;
+            /**
+             * Wan Attention Backend
+             * @description Attention backend used for the Wan transformer's forward pass. `sage` (SageAttention 2, quantized attention kernel) is fastest -- measured ~4x faster than `xformers` at Wan's typical sequence lengths -- but needs a matching prebuilt wheel for the installed torch/CUDA version (e.g. from github.com/woct0rdho/SageAttention/releases); `xformers` is the next-fastest fallback (also needs a matching build, e.g. from download.pytorch.org/whl/cuXXX). Falls back to `native` with a warning if the requested backend's package is unavailable.<br>Valid values: `native`, `xformers`, `sage`
+             * @default sage
+             */
+            wan_attention_backend?: string;
+            /**
+             * Wan Torch Compile
+             * @description Compile the Wan transformer with `torch.compile`. See `wan_torch_compile_scope` for the `block` vs `model` tradeoff. At `block` scope this mirrors ComfyUI-KJNodes' TorchCompileModelWanVideoV2 and measured ~24% additional steady-state speedup on top of `wan_attention_backend: sage`, at the cost of a one-time ~40s compilation pass the first time each expert is used at a given resolution/frame-count (recompiles if that shape changes).
+             * @default false
+             */
+            wan_torch_compile?: boolean;
+            /**
+             * Wan Torch Compile Scope
+             * @description Compilation granularity for `wan_torch_compile`. `block` compiles each transformer block separately -- one graph per block, reused across all 40 (mirrors ComfyUI-KJNodes). `model` compiles the whole transformer as a single graph, which can fuse *across* block boundaries too (not just within each one), at the cost of a much larger one-time compilation pass and correspondingly more VRAM/RAM during that pass.<br>Valid values: `block`, `model`
+             * @default block
+             */
+            wan_torch_compile_scope?: string;
             /**
              * Pid Memory Optimization
              * @description Enable experimental PiD decode memory optimizations. Roughly halves the peak activation memory of a PiD decode; in exchange the decoded image changes slightly, because neither the chunked pixel pathway nor the float32 sampler intermediates are bit-exact with the default path.

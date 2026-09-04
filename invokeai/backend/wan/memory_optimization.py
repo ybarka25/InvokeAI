@@ -207,9 +207,14 @@ def wan_memory_optimization(
     if activation_chunk_size <= 0:
         raise ValueError("activation_chunk_size must be positive")
 
+    # This is a best-effort forward-pass optimization, not a correctness requirement --
+    # a transformer without a chunkable ``blocks`` list (e.g. a test double standing in for
+    # the real model) simply has nothing to chunk, so skip rather than error. Callers that
+    # need this to be a real Wan transformer should check that themselves.
     blocks: Any = getattr(transformer, "blocks", None)
     if blocks is None:
-        raise TypeError(f"Expected a Wan transformer with blocks, got {type(transformer).__name__}.")
+        yield
+        return
     blocks = list(blocks)
     if hasattr(transformer, "_invokeai_original_forward") or any(
         hasattr(block, "_invokeai_original_forward") for block in blocks

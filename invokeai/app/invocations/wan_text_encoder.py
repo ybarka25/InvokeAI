@@ -15,6 +15,7 @@ from invokeai.backend.stable_diffusion.diffusion.conditioning_data import (
     ConditioningFieldData,
     WanConditioningInfo,
 )
+from invokeai.backend.util.devices import TorchDevice
 
 # Wan models are trained with 512-token text sequences (matches the
 # upstream config.json's ``text_len: 512`` and the WanPipeline.__call__
@@ -97,6 +98,23 @@ class WanTextEncoderInvocation(BaseInvocation):
             # Drop the batch dim (we always encode one prompt at a time).
             prompt_embeds = outputs.last_hidden_state.squeeze(0)
             attention_mask_out = attention_mask.squeeze(0)
+
+        # Release the ~12.8 GB UMT5 encoder's caching-allocator blocks back to the driver
+        # now, rather than leaving them reserved until the next model load happens to
+        # reclaim them. The denoise loop's transformer load runs right after this and
+        # measures free VRAM to decide how much of itself can stay resident.
+        TorchDevice.empty_cache()
+
+        # This is a one-shot text encoder for the rest of the run: nothing downstream
+        # needs it back on GPU. Model-cache eviction is only sized to make room for
+        # whatever model is being *loaded* next, not for that model's own downstream
+        # working-memory needs -- so a still VRAM-resident (merely unlocked) T5 can
+        # silently starve a later node's activation memory (e.g. wan_vace_video_encode's
+        # VAE encode) even though there's technically no reason to keep T5 on GPU.
+        # Proactively move it to RAM (it stays cached there, so a future reload is a
+        # cheap re-stream, not a rebuild from disk).
+        context.models.offload_from_vram(self.wan_t5_encoder.text_encoder)
+        context.models.offload_from_vram(self.wan_t5_encoder.tokenizer)
 
         # Match the Diffusers reference: zero out the embeddings past the valid
         # token count so the transformer sees clean padding.

@@ -79,11 +79,22 @@ def autocast_linear_forward_sidecar_patches(
 class CustomLinear(torch.nn.Linear, CustomModuleMixin):
     def _cast_tensor_for_input(self, tensor: torch.Tensor | None, input: torch.Tensor) -> torch.Tensor | None:
         tensor = cast_to_device(tensor, input.device)
+        if tensor is not None and isinstance(tensor, GGMLTensor):
+            # Dequantize once, here, to a plain tensor, rather than handing the raw GGMLTensor to
+            # torch.nn.functional.linear(). GGMLTensor.__torch_dispatch__ re-enters Python for every
+            # aten op it participates in (linear decomposes into t/addmm/etc.), so passing it through
+            # untouched turns one native cuBLAS gemm into a chain of small Python-dispatched dequant
+            # kernels (bitshift/and/or/mul) plus the gemm itself. Measured impact on Wan's GGUF
+            # transformer: ~520 cudaStreamSynchronize calls per forward, with real GPU compute
+            # (aten::addmm) accounting for under 30% of wall-clock time. Dequantizing once up front
+            # collapses that to a single ordinary op ahead of a native linear call, matching how
+            # ComfyUI-GGUF's GGMLLayer.forward_ggml_cast_weights does it.
+            tensor = tensor.get_dequantized_tensor()
         if (
             tensor is not None
             and input.is_floating_point()
             and tensor.is_floating_point()
-            and not isinstance(tensor, (GGMLTensor, SDNQTensor))
+            and not isinstance(tensor, SDNQTensor)
             and tensor.dtype != input.dtype
         ):
             tensor = tensor.to(dtype=input.dtype)

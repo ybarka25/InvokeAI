@@ -366,6 +366,10 @@ class InvokeAILogger(object):  # noqa D102
             if handler_name == "console":
                 ch: logging.Handler = logging.StreamHandler()
                 ch.setFormatter(formatter())
+                # Keep the console readable at DEBUG log_level: DEBUG-level noise (per-step
+                # model cache accounting, installer-thread polling, etc.) still reaches the
+                # file handler below (unset level = inherit the logger's), just not stdout.
+                ch.setLevel(logging.INFO)
                 handlers.append(ch)
 
             elif handler_name == "syslog":

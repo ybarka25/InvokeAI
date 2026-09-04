@@ -28,6 +28,7 @@ from typing import Any, Callable, Iterable, Iterator, Optional
 
 import torch
 import torchvision.transforms as tv_transforms
+from diffusers.models.attention_dispatch import attention_backend
 from torchvision.transforms.functional import resize as tv_resize
 from tqdm import tqdm
 
@@ -61,18 +62,29 @@ from invokeai.backend.wan.sampling_utils import get_spatial_scale_factor, make_n
 # consumes the iterator once per ``apply_smart_model_patches`` invocation, and
 # the expert may be swapped (and re-entered) multiple times in a render.
 LoRAIteratorFactory = Callable[[], Iterable[PatchSpec]]
-WAN_MAX_RESIDENT_TRANSFORMER_BYTES = 2 * 2**30
 
 
-def _get_wan_transformer_working_mem_bytes(device: torch.device, *, enabled: bool) -> int | None:
-    """Reserve all but 2 GiB of VRAM so partial-load Wan weights target about 2 GiB resident."""
-    if not enabled or device.type != "cuda":
+def _get_wan_transformer_working_mem_bytes(device: torch.device, *, max_resident_gb: float | None) -> int | None:
+    """Reserve all but ``max_resident_gb`` of VRAM so partial-load Wan weights target that much resident.
+
+    ``max_resident_gb=None`` disables the cap entirely (the transformer loads 100% resident, as much as
+    VRAM allows) -- this is the fast path once a GGUF expert's weights are actually on the GPU rather than
+    being re-dequantized from CPU on every op (see ``wan_attention_backend``/the GGMLTensor dispatch fix).
+    A finite value trades some of that residency back for headroom that non-weight VRAM users (activation
+    buffers, and especially ``torch.compile``'s Inductor workspace, which alone measured ~4GB) need but
+    that InvokeAI's model cache doesn't otherwise know to reserve, since it only budgets around static
+    weights. Unlike the old hardcoded 2GiB cap (which forced ~96% of a 9.2GB expert to stream from RAM on
+    every op and dominated step time), a value like 6-7GB only streams the last couple GB -- most of the
+    model still stays put.
+    """
+    if max_resident_gb is None or device.type != "cuda":
         return None
 
+    max_resident_bytes = int(max_resident_gb * (2**30))
     total_vram = torch.cuda.get_device_properties(device).total_memory
-    if total_vram <= WAN_MAX_RESIDENT_TRANSFORMER_BYTES:
+    if total_vram <= max_resident_bytes:
         return None
-    return total_vram - WAN_MAX_RESIDENT_TRANSFORMER_BYTES
+    return total_vram - max_resident_bytes
 
 
 def _resolve_variant(context: InvocationContext, transformer_field: WanTransformerField) -> WanVariantType:
@@ -219,48 +231,16 @@ class _ExpertSwapper:
             assert self._active_model is not None
             return self._active_model
 
-        # Capture the outgoing expert's cache record before _release() drops our handle.
-        # We need it to force-unload below.
-        outgoing_cached_model = None
-        outgoing_info = self._active_info
-        if self._active_info is not None:
-            # ``LoadedModel`` keeps the cache record private, but exposes
-            # ``unload_from_vram`` so cache error handling stays in one place.
-            outgoing_cached_model = getattr(self._active_info, "_cache_record", None)
-            if outgoing_cached_model is not None:
-                outgoing_cached_model = getattr(outgoing_cached_model, "cached_model", None)
-
         # Release current GPU residency before bringing the other expert on device.
+        # ``_release()`` also force-unloads the outgoing expert's weights from VRAM —
+        # see its docstring comment for why that's necessary.
         self._release()
-
-        # Force the outgoing expert off GPU. The model cache's automatic offload
-        # (inside lock() -> _offload_unlocked_models) decides how much to free based on
-        # ``torch.cuda.memory_allocated()`` minus a 3 GB working-memory budget. With Wan
-        # 81-frame video the intermediate activations from the previous denoise step are
-        # still allocated alongside the just-unlocked high-noise expert, so the cache
-        # underestimates how much room the new expert really needs and partial-loads
-        # most of its layers to CPU. The user-visible symptom: log line "Loaded model
-        # ... VRAM: 2381 MB (25.9%)" instead of ~100% for the incoming expert.
-        #
-        # Sidestep the heuristic by explicitly unloading every weight of the outgoing
-        # expert to RAM. This is safe even if the cache evicted the entry between unlock
-        # and now — the cached_model object still owns the tensors.
-        if outgoing_cached_model is not None:
-            try:
-                unload_from_vram = getattr(outgoing_info, "unload_from_vram", None)
-                if callable(unload_from_vram):
-                    unload_from_vram(outgoing_cached_model.total_bytes())
-                else:
-                    # Keep compatibility with old LoadedModel handles while preserving
-                    # the process-global register_parameter guard.
-                    with MODEL_LOAD_LOCK.read_lock():
-                        outgoing_cached_model.full_unload_from_vram()
-            except Exception:
-                pass
 
         # Hand the PyTorch allocator a clean slate before partial_load_to_vram measures
         # free space — the freed blocks stay pinned in the caching allocator until
-        # empty_cache is called.
+        # empty_cache is called. Unconditional (not just when _release() just force-unloaded
+        # something): a stale reading here still skews the very first expert's load, before
+        # any release has ever happened.
         TorchDevice.empty_cache()
 
         # Load the requested expert lazily so its ``LoadedModel`` handle is
@@ -273,6 +253,39 @@ class _ExpertSwapper:
         else:
             device_ctx = info.model_on_device(working_mem_bytes=self._working_mem_bytes)
         cached_weights, model = device_ctx.__enter__()
+
+        if self._context.config.get().wan_torch_compile and not getattr(model, "_invokeai_compiled_blocks", False):
+            # Compile scope is configurable (wan_torch_compile_scope):
+            #   "block" -- one graph per transformer block, reused across all 40 (mirrors
+            #     ComfyUI-KJNodes' TorchCompileModelWanVideoV2). Lets Inductor fuse each
+            #     block's GGUF dequantization ops into the same graph as its real compute
+            #     (matmul/attention), instead of them running as a chain of small,
+            #     Python-dispatched kernels ahead of a separately-launched gemm. Measured
+            #     ~24% additional steady-state speedup on top of sage attention, ~40s
+            #     one-time compile cost.
+            #   "model" -- the whole transformer as a single graph, which can additionally
+            #     fuse *across* block boundaries. Substantially longer one-time compile
+            #     (many minutes, not ~40s) and more VRAM/RAM during that pass -- untested in
+            #     production, exists to compare against "block" scope.
+            # Either way this is paid once per model load, not per step or per generation,
+            # because the compiled model/blocks live on the model object InvokeAI's model
+            # cache keeps resident -- hence the idempotency guard below.
+            # Our weights never change shape between calls (same expert, same resolution),
+            # so make sure Dynamo treats parameters as static rather than re-checking/
+            # re-specializing on them. True by default on our pinned torch version already;
+            # set explicitly so this doesn't silently regress on a future torch upgrade.
+            torch._dynamo.config.force_parameter_static_shapes = True
+
+            scope = self._context.config.get().wan_torch_compile_scope
+            if scope == "model":
+                model.forward = torch.compile(model.forward, backend="inductor", mode="default", dynamic=False)
+                model._invokeai_compiled_blocks = True
+            else:
+                blocks = getattr(model, "blocks", None)
+                if blocks is not None:
+                    for i, block in enumerate(blocks):
+                        blocks[i] = torch.compile(block, backend="inductor", mode="default", dynamic=False)
+                    model._invokeai_compiled_blocks = True
 
         # Stash the device-context state immediately. If anything below fails (most
         # likely the LoRA patcher), the surrounding ExitStack will eventually call
@@ -324,6 +337,17 @@ class _ExpertSwapper:
         return model
 
     def _release(self) -> None:
+        # Capture the outgoing expert's cache record before we drop our handle below.
+        # We need it to force-unload after exiting the device context.
+        outgoing_cached_model = None
+        outgoing_info = self._active_info
+        if self._active_info is not None:
+            # ``LoadedModel`` keeps the cache record private, but exposes
+            # ``unload_from_vram`` so cache error handling stays in one place.
+            outgoing_cached_model = getattr(self._active_info, "_cache_record", None)
+            if outgoing_cached_model is not None:
+                outgoing_cached_model = getattr(outgoing_cached_model, "cached_model", None)
+
         # LoRA context first so weights are restored before the model leaves GPU. The
         # device context must exit even if weight-restore raises — otherwise the cache
         # record stays locked and the expert is pinned in VRAM for the whole process.
@@ -343,6 +367,32 @@ class _ExpertSwapper:
                 self._active_device_ctx = None
                 self._active_lora_ctx = None
                 self._active_model = None
+
+        # Force the outgoing expert off GPU rather than leaving it merely unlocked.
+        # The model cache's automatic offload only evicts unlocked models when a later
+        # lock() call decides it needs the room, using a heuristic
+        # (torch.cuda.memory_allocated() minus a 3 GB working-memory budget) that
+        # under-frees when other allocations (activations, another invocation's models)
+        # are also resident. Left unlocked-but-resident, an ~9 GB Wan expert can survive
+        # across invocation boundaries — e.g. a chained multi-segment video extension,
+        # where the next ``wan_video_denoise`` call builds a fresh ``_ExpertSwapper``
+        # that never learns this invocation left an expert on the GPU — until the two
+        # experts' resident weights plus fresh activations exceed physical VRAM.
+        if outgoing_cached_model is not None:
+            try:
+                unload_from_vram = getattr(outgoing_info, "unload_from_vram", None)
+                if callable(unload_from_vram):
+                    unload_from_vram(outgoing_cached_model.total_bytes())
+                else:
+                    # Keep compatibility with old LoadedModel handles while preserving
+                    # the process-global register_parameter guard.
+                    with MODEL_LOAD_LOCK.read_lock():
+                        outgoing_cached_model.full_unload_from_vram()
+            except Exception:
+                pass
+            # Hand the PyTorch allocator a clean slate — the freed blocks stay pinned
+            # in the caching allocator's reserved pool until empty_cache is called.
+            TorchDevice.empty_cache()
 
     def close(self) -> None:
         self._release()
@@ -432,6 +482,13 @@ class WanDenoiseInvocation(BaseInvocation):
         latents = self._run_diffusion(context)
         latents = latents.detach().to("cpu")
         name = context.tensors.save(tensor=latents)
+        if torch.cuda.is_available():
+            # Release the CUDA caching allocator's reserved-but-unused blocks back to the
+            # driver. Without this, chained Wan invocations (e.g. multi-segment video
+            # extension) see torch.cuda.mem_get_info() report shrinking free VRAM across
+            # segments even though this invocation's own models have all been unloaded,
+            # eventually forcing later segments back into slow partial loading.
+            torch.cuda.empty_cache()
         return LatentsOutput.build(latents_name=name, latents=latents, seed=None)
 
     def _run_diffusion(self, context: InvocationContext) -> torch.Tensor:
@@ -649,14 +706,24 @@ class WanDenoiseInvocation(BaseInvocation):
         def low_lora_factory() -> Iterable[PatchSpec]:
             return self._lora_iterator(context, low_loras)
 
-        optimize_memory = context.config.get().wan_memory_optimization
-        working_mem_bytes = _get_wan_transformer_working_mem_bytes(device, enabled=optimize_memory)
+        max_resident_gb = context.config.get().wan_max_resident_transformer_gb
+        working_mem_bytes = _get_wan_transformer_working_mem_bytes(device, max_resident_gb=max_resident_gb)
+        max_resident_bytes = int(max_resident_gb * (2**30)) if working_mem_bytes is not None else None
         if working_mem_bytes is not None:
             context.logger.info(
-                "Wan memory optimization: targeting about 2 GiB of resident transformer weights when partial "
-                "loading is available"
+                f"Wan memory optimization: targeting about {max_resident_gb:g} GiB of resident transformer "
+                "weights when partial loading is available"
             )
         with ExitStack() as exit_stack:
+            wanted_attention_backend = context.config.get().wan_attention_backend
+            if wanted_attention_backend != "native":
+                try:
+                    exit_stack.enter_context(attention_backend(wanted_attention_backend))
+                except Exception as exc:
+                    context.logger.warning(
+                        f"{wanted_attention_backend!r} attention backend unavailable, falling back to native SDPA: {exc}"
+                    )
+
             swapper = _ExpertSwapper(
                 context=context,
                 high_model=high_model,
@@ -667,9 +734,7 @@ class WanDenoiseInvocation(BaseInvocation):
                 high_is_quantized=high_is_quantized,
                 low_is_quantized=low_is_quantized,
                 working_mem_bytes=working_mem_bytes,
-                max_resident_model_bytes=(
-                    WAN_MAX_RESIDENT_TRANSFORMER_BYTES if working_mem_bytes is not None else None
-                ),
+                max_resident_model_bytes=(max_resident_bytes if working_mem_bytes is not None else None),
             )
             exit_stack.callback(swapper.close)
 
@@ -700,7 +765,11 @@ class WanDenoiseInvocation(BaseInvocation):
                 if ref_condition is not None:
                     latent_model_input = torch.cat([latent_model_input, ref_condition], dim=1)
 
-                with wan_memory_optimization(transformer, enabled=optimize_memory):
+                # Activation chunking is decoupled from the transformer-residency cap
+                # (`max_resident_gb`): it trims peak activation memory during the forward
+                # pass at negligible cost, so it stays on unconditionally rather than being
+                # tied to the VRAM-residency tradeoff above.
+                with wan_memory_optimization(transformer, enabled=True):
                     noise_pred_cond = transformer(
                         hidden_states=latent_model_input,
                         timestep=timestep,
