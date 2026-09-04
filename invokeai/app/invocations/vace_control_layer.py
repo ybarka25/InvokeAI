@@ -26,9 +26,7 @@ class VaceControlLayerInvocation(BaseInvocation):
     """
 
     video: VideoField = InputField(description="The control video for this layer (e.g. output of a preprocessor node).")
-    strength: float = InputField(
-        default=1.0, ge=0.0, le=1.0, description="Application force (opacity) for this layer."
-    )
+    strength: float = InputField(default=1.0, ge=0.0, le=1.0, description="Application force (opacity) for this layer.")
     order: int = InputField(
         default=0, description="Stacking position (lower paints first/further back). Ties keep wiring order."
     )

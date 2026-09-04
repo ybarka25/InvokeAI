@@ -160,9 +160,7 @@ def _color_match_frames(frames: torch.Tensor, reference: torch.Tensor) -> torch.
     for t in range(frames.shape[0]):
         src = ((frames[t] + 1.0) * 127.5).clamp(0, 255).round().numpy().astype(np.uint8)
         ref = ((reference[t] + 1.0) * 127.5).clamp(0, 255).round().numpy().astype(np.uint8)
-        matched = np.stack(
-            [_match_histogram_channel(src[..., c], ref[..., c]) for c in range(3)], axis=-1
-        ).clip(0, 255)
+        matched = np.stack([_match_histogram_channel(src[..., c], ref[..., c]) for c in range(3)], axis=-1).clip(0, 255)
         out[t] = torch.from_numpy(matched.astype(np.float32)) / 127.5 - 1.0
     return out
 
@@ -217,8 +215,7 @@ class WanVaceTileUpscaleInvocation(BaseInvocation, WithMetadata, WithBoard):
     input_video: VideoField = InputField(description="The video to upscale.")
     control_video: Optional[VideoField] = InputField(
         default=None,
-        description="Optional separate structural guide video (e.g. a cleaner source). Defaults to "
-        "input_video itself.",
+        description="Optional separate structural guide video (e.g. a cleaner source). Defaults to input_video itself.",
     )
 
     upscale_width: int = InputField(default=1280, gt=0, multiple_of=16, description="Target output width.")
@@ -293,8 +290,7 @@ class WanVaceTileUpscaleInvocation(BaseInvocation, WithMetadata, WithBoard):
         variant = _resolve_variant(context, self.transformer)
         if variant not in (WanVariantType.VACE, WanVariantType.VACE_2_1):
             raise ValueError(
-                f"wan_vace_tile_upscale requires a VACE transformer. The selected transformer is "
-                f"{variant.value!r}."
+                f"wan_vace_tile_upscale requires a VACE transformer. The selected transformer is {variant.value!r}."
             )
         _validate_spatial_dimensions(variant, self.tile_width, self.tile_height)
         spatial_scale = get_spatial_scale_factor(variant)

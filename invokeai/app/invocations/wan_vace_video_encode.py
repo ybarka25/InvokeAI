@@ -59,7 +59,9 @@ class WanVaceVideoEncodeInvocation(BaseInvocation):
     dropped.
     """
 
-    video: VideoField = InputField(description="Control video providing the structural guide (pose, depth, edges, a rough draft, etc.).")
+    video: VideoField = InputField(
+        description="Control video providing the structural guide (pose, depth, edges, a rough draft, etc.)."
+    )
     vae: VAEField = InputField(description=FieldDescriptions.vae, input=Input.Connection, title="VAE")
     # Must match wan_vace_denoise's width/height. multiple_of=16 for the same
     # reason as wan_video_denoise: transformer patch_size=(1, 2, 2) needs even
@@ -153,7 +155,9 @@ class WanVaceVideoEncodeInvocation(BaseInvocation):
 
         vae_info = context.models.load(self.vae.vae)
         if not isinstance(vae_info.model, AutoencoderKLWan):
-            raise TypeError(f"VACE control-video encoder requires AutoencoderKLWan, got {type(vae_info.model).__name__}.")
+            raise TypeError(
+                f"VACE control-video encoder requires AutoencoderKLWan, got {type(vae_info.model).__name__}."
+            )
 
         def _full_frame_estimate() -> int:
             estimate = estimate_vae_working_memory_wan(
