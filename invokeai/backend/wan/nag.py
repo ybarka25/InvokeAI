@@ -1,8 +1,11 @@
 """NAG (Normalized Attention Guidance) for Wan transformer cross-attention.
 
 Reference: "Normalized Attention Guidance: Universal Negative Guidance for Diffusion Models"
-(Chen et al.), ComfyUI-NAG (`ChenDarYen/ComfyUI-NAG`), vendored inside the "SuperUltimateVaceTools"
-ComfyUI pack the user's own known-working VACE workflow uses at ``cfg=1.0``.
+(Chen et al.), reimplementing the paper's guidance formula (MIT-licensed reference
+implementation: `ChenDarYen/ComfyUI-NAG`) against this codebase's own attention/transformer
+internals. Encountered via the "SuperUltimateVaceTools" ComfyUI pack, which bundles
+ComfyUI-NAG as one of its nodes; the known-working VACE workflow this fork was validated
+against uses it at ``cfg=1.0``.
 
 Unlike classifier-free guidance, NAG doesn't blend two full model forward passes' noise
 predictions -- it blends the *raw cross-attention output* (post softmax@V, pre the attention
