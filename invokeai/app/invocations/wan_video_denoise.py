@@ -27,8 +27,9 @@ from invokeai.app.invocations.fields import (
 )
 from invokeai.app.invocations.model import WanTransformerField
 from invokeai.app.invocations.primitives import LatentsOutput
+from diffusers.models.attention_dispatch import attention_backend
+
 from invokeai.app.invocations.wan_denoise import (
-    WAN_MAX_RESIDENT_TRANSFORMER_BYTES,
     WanDenoiseInvocation,
     _ExpertSwapper,
     _get_wan_transformer_working_mem_bytes,
@@ -141,6 +142,11 @@ class WanVideoDenoiseInvocation(BaseInvocation):
         latents = self._run_diffusion(context)
         # Keep the 5D shape (B, C, T, H, W) — wan_latents_to_video expects it.
         latents = latents.detach().to("cpu")
+        if torch.cuda.is_available():
+            # See the matching comment in wan_denoise.py's invoke(): releases the CUDA
+            # caching allocator's reserved-but-unused blocks back to the driver so chained
+            # multi-segment video generation doesn't see free VRAM shrink across segments.
+            torch.cuda.empty_cache()
         name = context.tensors.save(tensor=latents)
         # LatentsOutput.build uses latents.size()[3] / [2] for width / height.
         # For 5D the spatial dims are at indices 4 / 3 instead of 3 / 2, so we
@@ -291,11 +297,24 @@ class WanVideoDenoiseInvocation(BaseInvocation):
         def low_lora_factory() -> Iterable[PatchSpec]:
             return proxy._lora_iterator(context, low_loras)
 
-        optimize_memory = context.config.get().wan_memory_optimization
-        working_mem_bytes = _get_wan_transformer_working_mem_bytes(device, enabled=optimize_memory)
+        max_resident_gb = context.config.get().wan_max_resident_transformer_gb
+        working_mem_bytes = _get_wan_transformer_working_mem_bytes(device, max_resident_gb=max_resident_gb)
+        max_resident_bytes = int(max_resident_gb * (2**30)) if working_mem_bytes is not None else None
         if working_mem_bytes is not None:
-            context.logger.info("Wan memory optimization: limiting resident transformer weights to about 2 GiB")
+            context.logger.info(
+                f"Wan memory optimization: targeting about {max_resident_gb:g} GiB of resident transformer "
+                "weights when partial loading is available"
+            )
         with ExitStack() as exit_stack:
+            wanted_attention_backend = context.config.get().wan_attention_backend
+            if wanted_attention_backend != "native":
+                try:
+                    exit_stack.enter_context(attention_backend(wanted_attention_backend))
+                except Exception as exc:
+                    context.logger.warning(
+                        f"{wanted_attention_backend!r} attention backend unavailable, falling back to native SDPA: {exc}"
+                    )
+
             swapper = _ExpertSwapper(
                 context=context,
                 high_model=high_model,
@@ -306,9 +325,7 @@ class WanVideoDenoiseInvocation(BaseInvocation):
                 high_is_quantized=high_is_quantized,
                 low_is_quantized=low_is_quantized,
                 working_mem_bytes=working_mem_bytes,
-                max_resident_model_bytes=(
-                    WAN_MAX_RESIDENT_TRANSFORMER_BYTES if working_mem_bytes is not None else None
-                ),
+                max_resident_model_bytes=max_resident_bytes,
             )
             exit_stack.callback(swapper.close)
 
@@ -347,7 +364,10 @@ class WanVideoDenoiseInvocation(BaseInvocation):
                     # T2V (any variant): scalar timestep per batch.
                     timestep = t.expand(latents.shape[0])
 
-                with wan_memory_optimization(transformer, enabled=optimize_memory):
+                # Activation chunking is decoupled from the transformer-residency cap (see
+                # wan_denoise.py's matching comment): it trims peak activation memory at
+                # negligible cost, so it stays on unconditionally.
+                with wan_memory_optimization(transformer, enabled=True):
                     noise_pred_cond = transformer(
                         hidden_states=latent_model_input,
                         timestep=timestep,
