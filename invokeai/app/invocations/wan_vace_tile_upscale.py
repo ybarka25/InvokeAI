@@ -1,9 +1,12 @@
 """Tiled VACE video upscaler for Wan 2.2.
 
-Ported from the tiling algorithm in ComfyUI's ``UltimateVideoUpscaler`` custom node
-(``ComfyUI_SuperUltimateVaceTools``): bilinear-upscale the source video to the target
-size, then re-run VACE denoise on overlapping spatial x temporal tiles sized to a
-bounded working resolution, compositing the results back with a feathered blend.
+Bilinear-upscales the source video to the target size, then re-runs VACE denoise on
+overlapping spatial x temporal tiles sized to a bounded working resolution, compositing
+the results back with a feathered blend. General approach (tile at a bounded working
+size, feather-blend adjacent tiles, anchor each new tile to its already-composited
+neighbors to avoid seams) is a well-known pattern used by several tiled-upscale tools;
+this is an independent implementation built around this fork's own VACE conditioning
+and denoise loop, not a port of any of them.
 
 Because each tile is denoised at ``tile_width x tile_height x tile_num_frames``
 regardless of the requested ``upscale_width``/``upscale_height``/duration, the
@@ -19,19 +22,19 @@ Reuses:
   tile's VACE condition directly from in-memory cropped pixel tensors, reusing its
   mask input to anchor the temporal crossfade region to the previous segment's
   already-decoded pixels (the same mask convention used by wan_vace_video_encode).
-- ``calc_tiles_min_overlap`` (backend/tiles/) for the spatial tile grid. Spatial
-  tiles are denoised in the grid's row-major order and composited into a running
-  per-segment canvas *incrementally*, tile by tile (not as a single batched pass):
-  each tile after the first has its top/left overlap border (vs. an
-  already-processed neighbor) anchored to that neighbor's already-composited
-  pixels via the same mask-anchoring trick as the temporal crossfade below (hard
-  0 = inactive/keep-as-is there), and is itself pasted into the canvas with a
-  linear-feathered blend over the overlap. Mirrors ComfyUI's ``UltimateVideoUpscaler``
-  (``crop_gen``/``imgcomposite`` per tile) -- independent per-tile generation with
-  only a shared control-video crop (no neighbor anchoring) was tried first and
-  produced visible ghosting/double-exposure seams where adjacent tiles hallucinated
-  different structure at the boundary; VACE's control-video guidance alone is not
-  strong enough to keep independently-seeded tiles consistent.
+- ``calc_tiles_min_overlap`` (backend/tiles/, InvokeAI's own Multi-Diffusion tile-grid
+  utility) for the spatial tile grid. Spatial tiles are denoised in the grid's
+  row-major order and composited into a running per-segment canvas *incrementally*,
+  tile by tile (not as a single batched pass): each tile after the first has its
+  top/left overlap border (vs. an already-processed neighbor) anchored to that
+  neighbor's already-composited pixels via the same mask-anchoring trick as the
+  temporal crossfade below (hard 0 = inactive/keep-as-is there), and is itself
+  pasted into the canvas with a linear-feathered blend over the overlap --
+  independent per-tile generation with only a shared control-video crop (no
+  neighbor anchoring) was tried first and produced visible ghosting/double-exposure
+  seams where adjacent tiles hallucinated different structure at the boundary;
+  VACE's control-video guidance alone is not strong enough to keep
+  independently-seeded tiles consistent.
 - ``plan_temporal_tiles`` / ``crossfade_videos`` (backend/wan/vace_tile_upscale.py).
 """
 
@@ -121,11 +124,11 @@ def _composite_tile_into_canvas(canvas: torch.Tensor, tile_pixels: torch.Tensor,
     a small border of that overlap is pinned via the VACE control mask (see ``invoke``) --
     the rest of the overlap is independently regenerated content from two different tiles
     that must be faded between over its full width, or a hard seam/ghosting artifact
-    appears where the two tiles' independent interpretations meet. Mirrors ComfyUI's
-    ``UltimateVideoUpscaler``, which feathers over the tile's full overlap padding while
-    only clamping the *mask* to a small ``pad_mask_limit``. Applied tile-by-tile as each
-    tile finishes, rather than as a single batched pass over all tiles, so that later
-    tiles' spatial anchor can read already-composited neighbor content.
+    appears where the two tiles' independent interpretations meet -- feathering over the
+    tile's full overlap while only clamping the *mask* to a small border is what avoids
+    that. Applied tile-by-tile as each tile finishes, rather than as a single batched pass
+    over all tiles, so that later tiles' spatial anchor can read already-composited
+    neighbor content.
     """
     box = tile.coords
     th, tw = box.bottom - box.top, box.right - box.left
@@ -432,7 +435,10 @@ class WanVaceTileUpscaleInvocation(BaseInvocation, WithMetadata, WithBoard):
                     # order means top/left neighbors are always composited into segment_canvas already) are
                     # pinned to that already-generated content -- otherwise each tile is denoised independently
                     # from a fresh seed and can hallucinate different structure at the seam (see module
-                    # docstring). Clamped to spatial_overlap, mirroring ComfyUI's pad_mask_limit.
+                    # docstring). Clamped to spatial_overlap so the mask border stays a small,
+                    # fixed width even when the tile grid's actual overlap is larger (see
+                    # _composite_tile_into_canvas's docstring for why the composite blend itself
+                    # doesn't use this same clamp).
                     if stile.overlap.left > 0:
                         w = min(stile.overlap.left, self.spatial_overlap)
                         control_crop[:, :, :w, :] = segment_canvas[:, box.top : box.bottom, box.left : box.left + w, :]
@@ -442,7 +448,8 @@ class WanVaceTileUpscaleInvocation(BaseInvocation, WithMetadata, WithBoard):
                         control_crop[:, :h, :, :] = segment_canvas[:, box.top : box.top + h, box.left : box.right, :]
                         mask_crop[:, :h, :] = 0.0
                     # Temporal anchor (applied after, so it wins on any frame range it overlaps with the
-                    # spatial anchor above -- matches ComfyUI applying the crossfade override last).
+                    # spatial anchor above -- the two can disagree at a tile that's both a spatial and
+                    # a temporal seam, and the temporal continuity constraint takes priority there).
                     if ttile.crossfade > 0 and prev_tail is not None:
                         anchor = prev_tail[-ttile.crossfade :, box.top : box.bottom, box.left : box.right, :]
                         control_crop[: ttile.crossfade] = anchor
