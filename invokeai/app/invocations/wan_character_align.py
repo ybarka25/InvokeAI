@@ -149,8 +149,12 @@ class WanCharacterAlignInvocation(BaseInvocation, WithMetadata, WithBoard):
     detect_prompt: str = InputField(
         default="person.", description="Grounding DINO text prompt for the character (lowercase, end with '.')."
     )
-    detection_model: GroundingDinoModelKey = InputField(default="grounding-dino-tiny", description="Grounding DINO model size.")
-    detection_threshold: float = InputField(default=0.3, ge=0.0, le=1.0, description="Grounding DINO detection threshold.")
+    detection_model: GroundingDinoModelKey = InputField(
+        default="grounding-dino-tiny", description="Grounding DINO model size."
+    )
+    detection_threshold: float = InputField(
+        default=0.3, ge=0.0, le=1.0, description="Grounding DINO detection threshold."
+    )
     scale_reference: Literal["height", "width"] = InputField(
         default="height",
         description="Which bounding-box dimension is matched for zoom level. Height suits full-body/portrait shots.",
@@ -160,7 +164,9 @@ class WanCharacterAlignInvocation(BaseInvocation, WithMetadata, WithBoard):
         description="Short-side resolution preset for the shared output canvas.",
         ui_choice_labels=WAN_TARGET_RESOLUTION_LABELS,
     )
-    rounding: WanRounding = InputField(default="nearest", description="How to snap the resolution to the 16px Wan pixel grid.")
+    rounding: WanRounding = InputField(
+        default="nearest", description="How to snap the resolution to the 16px Wan pixel grid."
+    )
 
     @torch.no_grad()
     def invoke(self, context: InvocationContext) -> CharacterAlignOutput:
