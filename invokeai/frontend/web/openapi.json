@@ -35852,6 +35852,15 @@
                   "$ref": "#/components/schemas/VideoInvocation"
                 },
                 {
+                  "$ref": "#/components/schemas/VlmCaptionInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/VlmTextCompleteInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/VlmVideoMotionCaptionInvocation"
+                },
+                {
                   "$ref": "#/components/schemas/WanDenoiseInvocation"
                 },
                 {
@@ -44390,6 +44399,15 @@
                 "$ref": "#/components/schemas/VideoInvocation"
               },
               {
+                "$ref": "#/components/schemas/VlmCaptionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmTextCompleteInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmVideoMotionCaptionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
               },
               {
@@ -45741,6 +45759,15 @@
                 "$ref": "#/components/schemas/VideoInvocation"
               },
               {
+                "$ref": "#/components/schemas/VlmCaptionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmTextCompleteInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmVideoMotionCaptionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
               },
               {
@@ -46709,6 +46736,15 @@
           "video_frame_extract": {
             "$ref": "#/components/schemas/ImageOutput"
           },
+          "vlm_caption": {
+            "$ref": "#/components/schemas/StringOutput"
+          },
+          "vlm_text_complete": {
+            "$ref": "#/components/schemas/StringOutput"
+          },
+          "vlm_video_motion_caption": {
+            "$ref": "#/components/schemas/StringOutput"
+          },
           "wan_denoise": {
             "$ref": "#/components/schemas/LatentsOutput"
           },
@@ -47071,6 +47107,9 @@
           "video",
           "video_concat",
           "video_frame_extract",
+          "vlm_caption",
+          "vlm_text_complete",
+          "vlm_video_motion_caption",
           "wan_denoise",
           "wan_i2l",
           "wan_i2v_ideal_dimensions",
@@ -48007,6 +48046,15 @@
               },
               {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmCaptionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmTextCompleteInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmVideoMotionCaptionInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -49067,6 +49115,15 @@
               },
               {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmCaptionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmTextCompleteInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VlmVideoMotionCaptionInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -89825,6 +89882,294 @@
         "required": ["virtual_board_id", "board_name", "date", "image_count", "asset_count"],
         "title": "VirtualSubBoardDTO",
         "description": "A virtual sub-board computed from image/video metadata, not stored in the database."
+      },
+      "VlmCaptionInvocation": {
+        "category": "prompt",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates a text caption for an image using a vision-language model, following a free-form instruction.",
+        "node_pack": "invokeai",
+        "properties": {
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The image to caption.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "model": {
+            "default": "qwen2.5-vl-3b-instruct",
+            "description": "The vision-language model to use.",
+            "enum": ["qwen2.5-vl-3b-instruct", "qwen2.5-vl-7b-instruct"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "qwen2.5-vl-3b-instruct",
+            "orig_required": false,
+            "title": "Model",
+            "type": "string"
+          },
+          "instruction": {
+            "default": "Describe this image in a single detailed paragraph, as a prompt for an image/video generation model. Focus on the subject's appearance (face, hair, clothing, body pose), the setting, lighting, and camera framing. Do not mention that it is a photo, image, or painting -- describe it as if describing a video.",
+            "description": "The captioning instruction given to the model.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "Describe this image in a single detailed paragraph, as a prompt for an image/video generation model. Focus on the subject's appearance (face, hair, clothing, body pose), the setting, lighting, and camera framing. Do not mention that it is a photo, image, or painting -- describe it as if describing a video.",
+            "orig_required": false,
+            "title": "Instruction",
+            "type": "string"
+          },
+          "max_new_tokens": {
+            "default": 512,
+            "description": "Maximum tokens to generate.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 512,
+            "orig_required": false,
+            "title": "Max New Tokens",
+            "type": "integer"
+          },
+          "type": {
+            "const": "vlm_caption",
+            "default": "vlm_caption",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["prompt", "caption", "vlm", "vision-language", "qwen"],
+        "title": "VLM Caption",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/StringOutput"
+        }
+      },
+      "VlmTextCompleteInvocation": {
+        "category": "prompt",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Runs a text-only prompt through a vision-language model's language backbone (no image/video).",
+        "node_pack": "invokeai",
+        "properties": {
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The fully-assembled text prompt to complete.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true,
+            "title": "Prompt",
+            "ui_component": "textarea"
+          },
+          "model": {
+            "default": "qwen2.5-vl-3b-instruct",
+            "description": "The vision-language model to use.",
+            "enum": ["qwen2.5-vl-3b-instruct", "qwen2.5-vl-7b-instruct"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "qwen2.5-vl-3b-instruct",
+            "orig_required": false,
+            "title": "Model",
+            "type": "string"
+          },
+          "max_new_tokens": {
+            "default": 512,
+            "description": "Maximum tokens to generate.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 512,
+            "orig_required": false,
+            "title": "Max New Tokens",
+            "type": "integer"
+          },
+          "type": {
+            "const": "vlm_text_complete",
+            "default": "vlm_text_complete",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["prompt", "text", "vlm", "qwen", "rewrite"],
+        "title": "VLM Text Complete",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/StringOutput"
+        }
+      },
+      "VlmVideoMotionCaptionInvocation": {
+        "category": "prompt",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Describes the motion/action happening in a video clip using a vision-language model with\nnative video understanding (temporal frame sampling), not independent per-frame captioning.",
+        "node_pack": "invokeai",
+        "properties": {
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to describe the motion of.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "model": {
+            "default": "qwen2.5-vl-3b-instruct",
+            "description": "The vision-language model to use.",
+            "enum": ["qwen2.5-vl-3b-instruct", "qwen2.5-vl-7b-instruct"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "qwen2.5-vl-3b-instruct",
+            "orig_required": false,
+            "title": "Model",
+            "type": "string"
+          },
+          "instruction": {
+            "default": "Describe only the motion and action performed by the main subject in this video clip, in one short phrase (e.g. 'walking briskly forward', 'spinning around while raising both arms', 'sitting down and leaning back'). Do not describe appearance, clothing, setting, or camera -- only the physical action/movement.",
+            "description": "The captioning instruction given to the model.",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "Describe only the motion and action performed by the main subject in this video clip, in one short phrase (e.g. 'walking briskly forward', 'spinning around while raising both arms', 'sitting down and leaning back'). Do not describe appearance, clothing, setting, or camera -- only the physical action/movement.",
+            "orig_required": false,
+            "title": "Instruction",
+            "type": "string"
+          },
+          "num_frames": {
+            "default": 12,
+            "description": "Number of evenly-spaced frames to sample from the video.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 12,
+            "orig_required": false,
+            "title": "Num Frames",
+            "type": "integer"
+          },
+          "max_new_tokens": {
+            "default": 256,
+            "description": "Maximum tokens to generate.",
+            "exclusiveMinimum": 0,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": 256,
+            "orig_required": false,
+            "title": "Max New Tokens",
+            "type": "integer"
+          },
+          "type": {
+            "const": "vlm_video_motion_caption",
+            "default": "vlm_video_motion_caption",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["prompt", "caption", "vlm", "vision-language", "qwen", "video", "motion"],
+        "title": "VLM Video Motion Caption",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/StringOutput"
+        }
       },
       "WanConditioningField": {
         "description": "A Wan 2.2 conditioning tensor primitive value.\n\nWan conditioning is the UMT5-XXL hidden state for the prompt plus an attention\nmask marking valid (non-padding) tokens.",
