@@ -48,20 +48,27 @@ def _optimized_wan_transformer_forward(
     encoder_hidden_states_image: torch.Tensor | None = None,
     return_dict: bool = True,
     attention_kwargs: dict[str, Any] | None = None,
+    control_hidden_states: torch.Tensor | None = None,
+    control_hidden_states_scale: torch.Tensor | None = None,
 ) -> Any:
     original_forward = transformer._invokeai_original_forward  # type: ignore[attr-defined]
     # The custom transformer path is only needed to compact TI2V's per-token
-    # timesteps. Keep Diffusers' decorated forward for scalar timesteps and
-    # non-default attention kwargs.
-    if torch.is_grad_enabled() or timestep.ndim != 2 or attention_kwargs:
-        return original_forward(
-            hidden_states=hidden_states,
-            timestep=timestep,
-            encoder_hidden_states=encoder_hidden_states,
-            encoder_hidden_states_image=encoder_hidden_states_image,
-            return_dict=return_dict,
-            attention_kwargs=attention_kwargs,
-        )
+    # timesteps. Keep Diffusers' decorated forward for scalar timesteps,
+    # non-default attention kwargs, and VACE's control-video branch (the
+    # compact fast path below does not implement vace_blocks injection).
+    if torch.is_grad_enabled() or timestep.ndim != 2 or attention_kwargs or control_hidden_states is not None:
+        kwargs: dict[str, Any] = {
+            "hidden_states": hidden_states,
+            "timestep": timestep,
+            "encoder_hidden_states": encoder_hidden_states,
+            "encoder_hidden_states_image": encoder_hidden_states_image,
+            "return_dict": return_dict,
+            "attention_kwargs": attention_kwargs,
+        }
+        if control_hidden_states is not None:
+            kwargs["control_hidden_states"] = control_hidden_states
+            kwargs["control_hidden_states_scale"] = control_hidden_states_scale
+        return original_forward(**kwargs)
 
     batch_size, _, num_frames, height, width = hidden_states.shape
     patch_frames, patch_height, patch_width = transformer.config.patch_size  # type: ignore[attr-defined]
