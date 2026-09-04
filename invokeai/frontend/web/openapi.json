@@ -35843,13 +35843,34 @@
                   "$ref": "#/components/schemas/VAELoaderInvocation"
                 },
                 {
+                  "$ref": "#/components/schemas/VideoCannyEdgeDetectionInvocation"
+                },
+                {
                   "$ref": "#/components/schemas/VideoConcatInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/VideoDWOpenposeDetectionInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/VideoDepthAnythingDepthEstimationInvocation"
                 },
                 {
                   "$ref": "#/components/schemas/VideoFrameExtractInvocation"
                 },
                 {
+                  "$ref": "#/components/schemas/VideoHEDEdgeDetectionInvocation"
+                },
+                {
                   "$ref": "#/components/schemas/VideoInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/VideoLineartEdgeDetectionInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/VideoMLSDDetectionInvocation"
+                },
+                {
+                  "$ref": "#/components/schemas/VideoOpticalFlowDetectionInvocation"
                 },
                 {
                   "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -44381,13 +44402,34 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoCannyEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDWOpenposeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDepthAnythingDepthEstimationInvocation"
               },
               {
                 "$ref": "#/components/schemas/VideoFrameExtractInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoHEDEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoLineartEdgeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoMLSDDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoOpticalFlowDetectionInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -45732,13 +45774,34 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoCannyEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDWOpenposeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDepthAnythingDepthEstimationInvocation"
               },
               {
                 "$ref": "#/components/schemas/VideoFrameExtractInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoHEDEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoLineartEdgeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoMLSDDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoOpticalFlowDetectionInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -46703,11 +46766,32 @@
           "video": {
             "$ref": "#/components/schemas/VideoOutput"
           },
+          "video_canny_edge_detection": {
+            "$ref": "#/components/schemas/VideoOutput"
+          },
           "video_concat": {
+            "$ref": "#/components/schemas/VideoOutput"
+          },
+          "video_depth_anything_depth_estimation": {
+            "$ref": "#/components/schemas/VideoOutput"
+          },
+          "video_dw_openpose_detection": {
             "$ref": "#/components/schemas/VideoOutput"
           },
           "video_frame_extract": {
             "$ref": "#/components/schemas/ImageOutput"
+          },
+          "video_hed_edge_detection": {
+            "$ref": "#/components/schemas/VideoOutput"
+          },
+          "video_lineart_edge_detection": {
+            "$ref": "#/components/schemas/VideoOutput"
+          },
+          "video_mlsd_detection": {
+            "$ref": "#/components/schemas/VideoOutput"
+          },
+          "video_optical_flow_detection": {
+            "$ref": "#/components/schemas/VideoOutput"
           },
           "wan_denoise": {
             "$ref": "#/components/schemas/LatentsOutput"
@@ -47069,8 +47153,15 @@
           "unsharp_mask_oklab",
           "vae_loader",
           "video",
+          "video_canny_edge_detection",
           "video_concat",
+          "video_depth_anything_depth_estimation",
+          "video_dw_openpose_detection",
           "video_frame_extract",
+          "video_hed_edge_detection",
+          "video_lineart_edge_detection",
+          "video_mlsd_detection",
+          "video_optical_flow_detection",
           "wan_denoise",
           "wan_i2l",
           "wan_i2v_ideal_dimensions",
@@ -48000,13 +48091,34 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoCannyEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDWOpenposeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDepthAnythingDepthEstimationInvocation"
               },
               {
                 "$ref": "#/components/schemas/VideoFrameExtractInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoHEDEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoLineartEdgeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoMLSDDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoOpticalFlowDetectionInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -49060,13 +49172,34 @@
                 "$ref": "#/components/schemas/VAELoaderInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoCannyEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoConcatInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDWOpenposeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoDepthAnythingDepthEstimationInvocation"
               },
               {
                 "$ref": "#/components/schemas/VideoFrameExtractInvocation"
               },
               {
+                "$ref": "#/components/schemas/VideoHEDEdgeDetectionInvocation"
+              },
+              {
                 "$ref": "#/components/schemas/VideoInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoLineartEdgeDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoMLSDDetectionInvocation"
+              },
+              {
+                "$ref": "#/components/schemas/VideoOpticalFlowDetectionInvocation"
               },
               {
                 "$ref": "#/components/schemas/WanDenoiseInvocation"
@@ -89090,6 +89223,125 @@
         "required": ["board_id", "video_name"],
         "title": "VideoBoardArg"
       },
+      "VideoCannyEdgeDetectionInvocation": {
+        "category": "controlnet_preprocessors",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates an edge-map control video using cv2's Canny algorithm, frame by frame.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to process",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "low_threshold": {
+            "default": 100,
+            "description": "The low threshold of the Canny pixel gradient (0-255)",
+            "field_kind": "input",
+            "input": "any",
+            "maximum": 255,
+            "minimum": 0,
+            "orig_default": 100,
+            "orig_required": false,
+            "title": "Low Threshold",
+            "type": "integer"
+          },
+          "high_threshold": {
+            "default": 200,
+            "description": "The high threshold of the Canny pixel gradient (0-255)",
+            "field_kind": "input",
+            "input": "any",
+            "maximum": 255,
+            "minimum": 0,
+            "orig_default": 200,
+            "orig_required": false,
+            "title": "High Threshold",
+            "type": "integer"
+          },
+          "type": {
+            "const": "video_canny_edge_detection",
+            "default": "video_canny_edge_detection",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["controlnet", "canny", "video", "vace"],
+        "title": "Canny Edge Detection - Video",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
+      },
       "VideoConcatInvocation": {
         "category": "video",
         "class": "invocation",
@@ -89403,6 +89655,235 @@
         "title": "VideoDTO",
         "description": "Deserialized video record, enriched for the frontend."
       },
+      "VideoDWOpenposeDetectionInvocation": {
+        "category": "controlnet_preprocessors",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates an openpose control video from a video using DWPose, frame by frame.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to process",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "draw_body": {
+            "default": true,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": true,
+            "orig_required": false,
+            "title": "Draw Body",
+            "type": "boolean"
+          },
+          "draw_face": {
+            "default": true,
+            "description": "VACE's own pose annotator (PoseBodyFaceAnnotator) draws body+face by default -- leaving this off emits a sparser control signal than what the model was trained against (no head orientation/gaze cue).",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": true,
+            "orig_required": false,
+            "title": "Draw Face",
+            "type": "boolean"
+          },
+          "draw_hands": {
+            "default": false,
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": false,
+            "orig_required": false,
+            "title": "Draw Hands",
+            "type": "boolean"
+          },
+          "type": {
+            "const": "video_dw_openpose_detection",
+            "default": "video_dw_openpose_detection",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["controlnet", "dwpose", "openpose", "video", "vace"],
+        "title": "DW Openpose Detection - Video",
+        "type": "object",
+        "version": "1.2.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
+      },
+      "VideoDepthAnythingDepthEstimationInvocation": {
+        "category": "controlnet_preprocessors",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates a depth-map control video using a Depth Anything model, frame by frame.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to process",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "model_size": {
+            "default": "small_v2",
+            "description": "The size of the depth model to use",
+            "enum": ["large", "base", "small", "small_v2"],
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": "small_v2",
+            "orig_required": false,
+            "title": "Model Size",
+            "type": "string"
+          },
+          "type": {
+            "const": "video_depth_anything_depth_estimation",
+            "default": "video_depth_anything_depth_estimation",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["controlnet", "depth", "depth anything", "video", "vace"],
+        "title": "Depth Anything Depth Estimation - Video",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
+      },
       "VideoField": {
         "properties": {
           "video_name": {
@@ -89522,6 +90003,111 @@
           "$ref": "#/components/schemas/ImageOutput"
         }
       },
+      "VideoHEDEdgeDetectionInvocation": {
+        "category": "controlnet_preprocessors",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates a softedge control video using the HED model, frame by frame.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to process",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "scribble": {
+            "default": false,
+            "description": "Whether or not to use scribble mode",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": false,
+            "orig_required": false,
+            "title": "Scribble",
+            "type": "boolean"
+          },
+          "type": {
+            "const": "video_hed_edge_detection",
+            "default": "video_hed_edge_detection",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["controlnet", "hed", "softedge", "video", "vace"],
+        "title": "HED Edge Detection - Video",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
+      },
       "VideoInvocation": {
         "category": "primitives",
         "class": "invocation",
@@ -89585,6 +90171,228 @@
           "$ref": "#/components/schemas/VideoOutput"
         }
       },
+      "VideoLineartEdgeDetectionInvocation": {
+        "category": "controlnet_preprocessors",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates a lineart control video using the Lineart model, frame by frame.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to process",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "coarse": {
+            "default": false,
+            "description": "Whether to use coarse mode",
+            "field_kind": "input",
+            "input": "any",
+            "orig_default": false,
+            "orig_required": false,
+            "title": "Coarse",
+            "type": "boolean"
+          },
+          "type": {
+            "const": "video_lineart_edge_detection",
+            "default": "video_lineart_edge_detection",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["controlnet", "lineart", "video", "vace"],
+        "title": "Lineart Edge Detection - Video",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
+      },
+      "VideoMLSDDetectionInvocation": {
+        "category": "controlnet_preprocessors",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates a line-segment control video using MLSD, frame by frame.",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to process",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "score_threshold": {
+            "default": 0.1,
+            "description": "The threshold used to score points when determining line segments",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0,
+            "orig_default": 0.1,
+            "orig_required": false,
+            "title": "Score Threshold",
+            "type": "number"
+          },
+          "distance_threshold": {
+            "default": 20.0,
+            "description": "Threshold for including a line segment - lines shorter than this distance will be discarded",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0,
+            "orig_default": 20.0,
+            "orig_required": false,
+            "title": "Distance Threshold",
+            "type": "number"
+          },
+          "type": {
+            "const": "video_mlsd_detection",
+            "default": "video_mlsd_detection",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["controlnet", "mlsd", "edge", "video", "vace"],
+        "title": "MLSD Detection - Video",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
+      },
       "VideoNamesBatch": {
         "properties": {
           "video_names": {
@@ -89627,6 +90435,112 @@
         "required": ["video_names", "starred_count", "total_count"],
         "title": "VideoNamesResult",
         "description": "Response containing ordered video names with metadata for optimistic updates."
+      },
+      "VideoOpticalFlowDetectionInvocation": {
+        "category": "controlnet_preprocessors",
+        "class": "invocation",
+        "classification": "prototype",
+        "description": "Generates a motion control video via dense optical flow (Farneback), frame by frame.\n\nEncodes the direction of motion as hue and its speed as brightness, so camera pans and\nmoving subjects both show up as colored motion vectors. The first output frame has no\nprior frame to compare against, so it's emitted as flat black (zero motion).",
+        "node_pack": "invokeai",
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The board to save the image to",
+            "field_kind": "internal",
+            "input": "direct",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MetadataField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional metadata to be saved with the image",
+            "field_kind": "internal",
+            "input": "connection",
+            "orig_required": false,
+            "ui_hidden": false
+          },
+          "id": {
+            "description": "The id of this instance of an invocation. Must be unique among all instances of invocations.",
+            "field_kind": "node_attribute",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_intermediate": {
+            "default": false,
+            "description": "Whether or not this is an intermediate invocation.",
+            "field_kind": "node_attribute",
+            "input": "direct",
+            "orig_required": true,
+            "title": "Is Intermediate",
+            "type": "boolean",
+            "ui_hidden": false,
+            "ui_type": "IsIntermediate"
+          },
+          "use_cache": {
+            "default": true,
+            "description": "Whether or not to use the cache",
+            "field_kind": "node_attribute",
+            "title": "Use Cache",
+            "type": "boolean"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoField"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The video to process",
+            "field_kind": "input",
+            "input": "any",
+            "orig_required": true
+          },
+          "magnitude_scale": {
+            "default": 15.0,
+            "description": "Multiplier applied to flow magnitude before clamping to the 0-255 brightness range. Raise for subtle/slow motion, lower if fast motion is clipping to solid white.",
+            "field_kind": "input",
+            "input": "any",
+            "minimum": 0.1,
+            "orig_default": 15.0,
+            "orig_required": false,
+            "title": "Magnitude Scale",
+            "type": "number"
+          },
+          "type": {
+            "const": "video_optical_flow_detection",
+            "default": "video_optical_flow_detection",
+            "field_kind": "node_attribute",
+            "title": "type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "id"],
+        "tags": ["controlnet", "optical-flow", "motion", "video", "vace"],
+        "title": "Optical Flow (Motion) - Video",
+        "type": "object",
+        "version": "1.0.0",
+        "output": {
+          "$ref": "#/components/schemas/VideoOutput"
+        }
       },
       "VideoOutput": {
         "class": "output",
