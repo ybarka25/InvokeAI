@@ -32,9 +32,11 @@ from invokeai.app.invocations.fields import (
     SD3ConditioningField,
     TensorField,
     UIComponent,
+    VaceControlLayerField,
     VideoField,
     WanConditioningField,
     WanRefImageConditioningField,
+    WanVaceConditioningField,
     ZImageConditioningField,
 )
 from invokeai.app.services.images.images_common import ImageDTO
@@ -588,6 +590,48 @@ class WanRefImageOutput(BaseInvocationOutput):
         )
 
 
+@invocation_output("wan_vace_condition_output")
+class WanVaceConditioningOutput(BaseInvocationOutput):
+    """Output of a Wan 2.2 VACE control-video VAE-encoder."""
+
+    vace_condition: WanVaceConditioningField = OutputField(
+        description="VAE-latent control-video conditioning for Wan 2.2 VACE.",
+        title="VACE Condition",
+    )
+
+    @classmethod
+    def build(
+        cls,
+        condition_tensor_name: str,
+        width: int,
+        height: int,
+        num_frames: int,
+        num_reference_images: int = 0,
+    ) -> "WanVaceConditioningOutput":
+        return cls(
+            vace_condition=WanVaceConditioningField(
+                condition_tensor_name=condition_tensor_name,
+                width=width,
+                height=height,
+                num_frames=num_frames,
+                num_reference_images=num_reference_images,
+            )
+        )
+
+
+@invocation_output("vace_control_layer_output")
+class VaceControlLayerOutput(BaseInvocationOutput):
+    """Output of vace_control_layer: one control-video layer for vace_control_blend."""
+
+    layer: VaceControlLayerField = OutputField(
+        description="Control-video layer (video + strength + order).", title="Control Layer"
+    )
+
+    @classmethod
+    def build(cls, video_name: str, strength: float, order: int) -> "VaceControlLayerOutput":
+        return cls(layer=VaceControlLayerField(video=VideoField(video_name=video_name), strength=strength, order=order))
+
+
 @invocation_output("conditioning_output")
 class ConditioningOutput(BaseInvocationOutput):
     """Base class for nodes that output a single conditioning tensor"""
@@ -624,6 +668,30 @@ class VideoOutput(BaseInvocationOutput):
             fps=fps,
             duration=video_dto.duration,
         )
+
+
+@invocation_output("wan_vace_loop_prep_output")
+class WanVaceLoopPrepOutput(BaseInvocationOutput):
+    """Output of ``wan_vace_loop_prep``: a trimmed/cropped/resized source video plus matching
+    start/end anchor images, all sharing one resolved width/height ready for the pose/depth
+    preprocessors and ``wan_vace_pose_depth_generate``."""
+
+    video: VideoField = OutputField(description="Trimmed, cropped, and resized source video.")
+    start_image: Optional[ImageField] = OutputField(
+        default=None, description="Cropped/resized start anchor image, if provided."
+    )
+    end_image: Optional[ImageField] = OutputField(
+        default=None, description="Cropped/resized end anchor image, if provided."
+    )
+    start_image_video: Optional[VideoField] = OutputField(
+        default=None,
+        description="start_image held static and repeated for the full clip duration, if start_image was "
+        "provided -- feed this (instead of video) into a depth preprocessor to keep the scene/viewpoint "
+        "anchored to the start image while pose (from video) still carries the motion.",
+    )
+    width: int = OutputField(description="Resolved output width in pixels.")
+    height: int = OutputField(description="Resolved output height in pixels.")
+    num_frames: int = OutputField(description="Number of frames in the trimmed video.")
 
 
 @invocation(

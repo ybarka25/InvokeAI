@@ -188,6 +188,7 @@ class FieldDescriptions:
     wan_model = "Wan 2.2 model (Transformer) to load"
     wan_t5_encoder = "UMT5-XXL tokenizer and text encoder for Wan 2.2"
     wan_ref_image = "Reference-image (VAE-latent) conditioning for Wan 2.2 I2V."
+    wan_vace_condition = "Control-video (VAE-latent) conditioning for Wan 2.2 VACE."
     sdxl_main_model = "SDXL Main model (UNet, VAE, CLIP1, CLIP2) to load"
     sdxl_refiner_model = "SDXL Refiner Main Modde (UNet, VAE, CLIP2) to load"
     onnx_main_model = "ONNX Main model (UNet, VAE, CLIP) to load"
@@ -444,6 +445,45 @@ class WanRefImageConditioningField(BaseModel):
         default=1,
         description="Pixel-frame count the condition was built for. 1 for single-frame I2V "
         "(image output), 81+ for video.",
+    )
+
+
+class WanVaceConditioningField(BaseModel):
+    """Control-video conditioning for Wan 2.2 VACE (video-to-video).
+
+    Carries the 96-channel VAE-latent condition tensor (32-channel inactive
+    + reactive latents, 64-channel region mask) that
+    ``WanVACETransformer3DModel`` consumes as ``control_hidden_states``. This
+    first pass has no mask-based region editing, so the mask half is always
+    "fully active" (the whole frame is guided by the control video).
+    """
+
+    condition_tensor_name: str = Field(
+        description="Name of the saved [1, 96, num_reference_images + T_lat, H/8, W/8] condition tensor."
+    )
+    width: int = Field(description="Control-video width used during VAE encoding (matches denoise width).")
+    height: int = Field(description="Control-video height used during VAE encoding (matches denoise height).")
+    num_frames: int = Field(description="Pixel-frame count the condition was built for (matches denoise num_frames).")
+    num_reference_images: int = Field(
+        default=0,
+        description="Number of reference-image latent frames prepended to the condition tensor. The denoise "
+        "node must strip this many leading latent frames from its output before it's a valid video latent.",
+    )
+
+
+class VaceControlLayerField(BaseModel):
+    """One control-video layer for `vace_control_blend`: a video plus its application
+    strength (opacity) and stacking order (paint position), so several preprocessed
+    control videos (canny, depth, pose, ...) can be composited into a single control video.
+    """
+
+    video: VideoField = Field(description="The control video for this layer.")
+    strength: float = Field(
+        default=1.0, description="Application force (opacity) when this layer is painted over the layers beneath it."
+    )
+    order: int = Field(
+        default=0,
+        description="Stacking position; lower values paint first (further back). Ties keep the layers' wiring order.",
     )
 
 

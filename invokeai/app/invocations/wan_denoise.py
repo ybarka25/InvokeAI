@@ -128,21 +128,62 @@ def _scheduler_path_for_transformer(context: InvocationContext, transformer_fiel
     return None
 
 
-def _default_scheduler_for_variant(variant: WanVariantType):
+def _default_scheduler_for_variant(
+    variant: WanVariantType, flow_shift_override: Optional[float] = None, sampler: str = "unipc"
+):
     """Build a variant-appropriate scheduler when no on-disk config is available.
 
     Standalone GGUF / single-file installs don't ship a ``scheduler/`` directory,
     so we have to reconstruct the scheduler from variant knowledge. Values are
     verbatim from each variant's ``scheduler/scheduler_config.json`` in the
     matching ``Wan-AI/Wan2.2-*-Diffusers`` repo.
+
+    ``sampler="sa_solver"`` swaps the solver algorithm to diffusers'
+    ``SASolverScheduler`` (predictor-corrector) instead of ``UniPCMultistepScheduler``
+    -- reference ComfyUI pipelines using the same CausVid+FusionX distillation LoRA
+    stack were found using SA-Solver (ComfyUI's ``sa_solver`` + ``simple`` scheduler,
+    which is just flow-matching sigmas with no extra reweighting -- the same
+    ``use_flow_sigmas=True`` convention already used here), not UniPC.
     """
-    from diffusers import UniPCMultistepScheduler
+    from diffusers import SASolverScheduler, UniPCMultistepScheduler
 
     # Both Wan 2.2 families ship UniPCMultistepScheduler with flow_prediction +
     # use_flow_sigmas; only the exponential flow_shift differs (5.0 for TI2V-5B,
     # 3.0 for the A14B pair). Without these settings samples drift — an unshifted
     # schedule also skews how many A14B steps land above the MoE expert boundary.
-    flow_shift = 5.0 if variant == WanVariantType.TI2V_5B else 3.0
+    #
+    # ``flow_shift_override`` lets a caller deviate from the base checkpoint's
+    # documented default -- distillation LoRA stacks (e.g. CausVid + a 4-step
+    # Lightning/FusionX combo) are commonly tuned against a *different* shift
+    # than the base model ships with (reference ComfyUI pipelines using this
+    # exact LoRA stack were found using ``shift=8.0``, not the base model's 3.0).
+    # Using the base shift with a distilled LoRA can starve the few available
+    # steps of the right noise levels for conditioning (control video, identity
+    # reference) to actually take hold -- a plausible cause of a few-step run
+    # collapsing to a generic, conditioning-insensitive output.
+    flow_shift = flow_shift_override if flow_shift_override is not None else (
+        5.0 if variant == WanVariantType.TI2V_5B else 3.0
+    )
+    if sampler == "sa_solver":
+        # SASolverScheduler's default tau_func (`1 if 200 <= t <= 800 else 0`) gates its
+        # stochastic/SDE noise injection using classic DDPM-era timestep magnitudes. With
+        # use_flow_sigmas=True the actual timestep values follow flow-matching's own scale
+        # instead, so that heuristic doesn't line up -- it can inject stochastic noise at
+        # steps that have no business receiving it, which at only a handful of steps is
+        # enough to never converge (reproduced: pure-noise output). tau_func=0 forces pure
+        # deterministic ODE sampling, matching diffusers' own documented recipe for this
+        # combination ("SA-Solver will sample from vanilla diffusion ODE if tau_func is set
+        # to `lambda t: 0`").
+        return SASolverScheduler(
+            num_train_timesteps=1000,
+            predictor_order=2,
+            corrector_order=2,
+            prediction_type="flow_prediction",
+            flow_shift=flow_shift,
+            use_flow_sigmas=True,
+            algorithm_type="data_prediction",
+            tau_func=lambda t: 0.0,
+        )
     return UniPCMultistepScheduler(
         num_train_timesteps=1000,
         solver_order=2,
@@ -742,7 +783,13 @@ class WanDenoiseInvocation(BaseInvocation):
         # Squeeze T for downstream 4D consumers.
         return latents.squeeze(2)
 
-    def _build_scheduler(self, context: InvocationContext, device: torch.device):
+    def _build_scheduler(
+        self,
+        context: InvocationContext,
+        device: torch.device,
+        flow_shift_override: Optional[float] = None,
+        sampler: str = "unipc",
+    ):
         """Construct the scheduler matching the model's on-disk ``scheduler_config.json``.
 
         All Wan 2.2 variants ship ``UniPCMultistepScheduler`` with flow-matching
@@ -776,7 +823,7 @@ class WanDenoiseInvocation(BaseInvocation):
 
         if scheduler_dir is None or scheduler_cls is None:
             variant = _resolve_variant(context, self.transformer)
-            return _default_scheduler_for_variant(variant)
+            return _default_scheduler_for_variant(variant, flow_shift_override=flow_shift_override, sampler=sampler)
 
         return scheduler_cls.from_pretrained(str(scheduler_dir), local_files_only=True)
 
