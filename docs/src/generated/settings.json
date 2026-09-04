@@ -160,7 +160,7 @@
     },
     {
       "category": "PATHS",
-      "default": "models/.convert_cache",
+      "default": "models\\.convert_cache",
       "description": "Path to the converted models cache directory (DEPRECATED, but do not delete because it is needed for migration from previous versions).",
       "env_var": "INVOKEAI_CONVERT_CACHE_DIR",
       "literal_values": [],
@@ -171,7 +171,7 @@
     },
     {
       "category": "PATHS",
-      "default": "models/.download_cache",
+      "default": "models\\.download_cache",
       "description": "Path to the directory that contains dynamically downloaded models.",
       "env_var": "INVOKEAI_DOWNLOAD_CACHE_DIR",
       "literal_values": [],
@@ -575,12 +575,56 @@
     {
       "category": "GENERATION",
       "default": false,
-      "description": "Enable experimental Wan memory optimizations at the cost of slower generation.",
+      "description": "DEPRECATED, no longer read: previously capped resident Wan transformer weights to a hardcoded 2GiB, which forced ~96% of a GGUF expert to stream from RAM on every op. Superseded by `wan_max_resident_transformer_gb`, which gives the same VRAM/speed tradeoff at a tunable point instead of one crippling fixed value.",
       "env_var": "INVOKEAI_WAN_MEMORY_OPTIMIZATION",
       "literal_values": [],
       "name": "wan_memory_optimization",
       "required": false,
       "type": "<class 'bool'>",
+      "validation": {}
+    },
+    {
+      "category": "GENERATION",
+      "default": null,
+      "description": "Cap how much of the active Wan transformer expert's weights (~9.2GB for a Q4_K_M A14B expert) stay VRAM-resident; the rest streams from RAM on each op. Leave unset for 100% residency (fastest, needs the most VRAM: weights + activations + `torch.compile` workspace if enabled). Lower this if you hit CUDA OOM instead of enabling more VRAM-hungry features on a smaller GPU -- e.g. ~6-7 out of 9.2GB only streams the last couple GB (small speed cost) but frees several GB of headroom for `wan_torch_compile`'s ~4GB Inductor workspace or a longer/higher-res generation. Values much below ~5GB approach the old hardcoded-2GiB behavior's slowdown.",
+      "env_var": "INVOKEAI_WAN_MAX_RESIDENT_TRANSFORMER_GB",
+      "literal_values": [],
+      "name": "wan_max_resident_transformer_gb",
+      "required": false,
+      "type": "typing.Optional[float]",
+      "validation": {}
+    },
+    {
+      "category": "GENERATION",
+      "default": "sage",
+      "description": "Attention backend used for the Wan transformer's forward pass. `sage` (SageAttention 2, quantized attention kernel) is fastest -- measured ~4x faster than `xformers` at Wan's typical sequence lengths -- but needs a matching prebuilt wheel for the installed torch/CUDA version (e.g. from github.com/woct0rdho/SageAttention/releases); `xformers` is the next-fastest fallback (also needs a matching build, e.g. from download.pytorch.org/whl/cuXXX). Falls back to `native` with a warning if the requested backend's package is unavailable.<br>Valid values: `native`, `xformers`, `sage`",
+      "env_var": "INVOKEAI_WAN_ATTENTION_BACKEND",
+      "literal_values": [],
+      "name": "wan_attention_backend",
+      "required": false,
+      "type": "<class 'str'>",
+      "validation": {}
+    },
+    {
+      "category": "GENERATION",
+      "default": false,
+      "description": "Compile the Wan transformer with `torch.compile`. See `wan_torch_compile_scope` for the `block` vs `model` tradeoff. At `block` scope this mirrors ComfyUI-KJNodes' TorchCompileModelWanVideoV2 and measured ~24% additional steady-state speedup on top of `wan_attention_backend: sage`, at the cost of a one-time ~40s compilation pass the first time each expert is used at a given resolution/frame-count (recompiles if that shape changes).",
+      "env_var": "INVOKEAI_WAN_TORCH_COMPILE",
+      "literal_values": [],
+      "name": "wan_torch_compile",
+      "required": false,
+      "type": "<class 'bool'>",
+      "validation": {}
+    },
+    {
+      "category": "GENERATION",
+      "default": "block",
+      "description": "Compilation granularity for `wan_torch_compile`. `block` compiles each transformer block separately -- one graph per block, reused across all 40 (mirrors ComfyUI-KJNodes). `model` compiles the whole transformer as a single graph, which can fuse *across* block boundaries too (not just within each one), at the cost of a much larger one-time compilation pass and correspondingly more VRAM/RAM during that pass.<br>Valid values: `block`, `model`",
+      "env_var": "INVOKEAI_WAN_TORCH_COMPILE_SCOPE",
+      "literal_values": [],
+      "name": "wan_torch_compile_scope",
+      "required": false,
+      "type": "<class 'str'>",
       "validation": {}
     },
     {
