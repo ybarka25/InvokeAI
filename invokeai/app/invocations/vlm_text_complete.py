@@ -24,7 +24,9 @@ from invokeai.backend.util.devices import TorchDevice
 class VlmTextCompleteInvocation(BaseInvocation):
     """Runs a text-only prompt through a vision-language model's language backbone (no image/video)."""
 
-    prompt: str = InputField(description="The fully-assembled text prompt to complete.", ui_component=UIComponent.Textarea)
+    prompt: str = InputField(
+        description="The fully-assembled text prompt to complete.", ui_component=UIComponent.Textarea
+    )
     model: VlmCaptionModelKey = InputField(
         default="qwen2.5-vl-3b-instruct", description="The vision-language model to use."
     )

@@ -76,9 +76,7 @@ class VlmCaptionPipeline(RawModel):
         content = [{"type": "image"}, {"type": "text", "text": instruction}]
         return self._generate(content, {"images": [image]}, max_new_tokens)
 
-    def caption_video(
-        self, video_path: Path, instruction: str, max_new_tokens: int = 256, num_frames: int = 12
-    ) -> str:
+    def caption_video(self, video_path: Path, instruction: str, max_new_tokens: int = 256, num_frames: int = 12) -> str:
         """Describe ``video_path`` (an on-disk video file) following a free-form ``instruction``.
 
         Extracts ``num_frames`` evenly-spaced frames ourselves (seeking directly to each one,
