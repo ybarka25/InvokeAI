@@ -18043,7 +18043,7 @@ export type components = {
              * Ui Model Variant
              * @default null
              */
-            ui_model_variant: (components["schemas"]["ClipVariantType"] | components["schemas"]["ModelVariantType"])[] | null;
+            ui_model_variant: (components["schemas"]["ClipVariantType"] | components["schemas"]["ModelVariantType"] | components["schemas"]["WanVariantType"])[] | null;
             /**
              * Ui Model Format
              * @default null
@@ -40186,9 +40186,9 @@ export type components = {
          *     recorded ``expert`` tag (set by the probe from the filename). Untagged
          *     LoRAs go to both lists.
          *
-         *     Against a TI2V-5B main, which is a single transformer with no low-noise
-         *     expert, a LoRA that would land only in the low-noise list is applied to
-         *     the transformer instead, with a warning.
+         *     Against a single-transformer main with no low-noise expert (TI2V-5B, or Wan 2.1
+         *     VACE-14B), a LoRA that would land only in the low-noise list is applied to the
+         *     transformer instead, with a warning.
          */
         WanLoRACollectionLoader: {
             /**
@@ -40236,10 +40236,10 @@ export type components = {
          *     low-noise list, ``None`` (untagged) -> both lists. Use the ``target``
          *     field to override.
          *
-         *     For TI2V-5B (single transformer) only the primary list is used at denoise
-         *     time, so a LoRA that would land only in the low-noise list is applied to
-         *     the transformer instead, with a warning. The alternative is to accept the
-         *     LoRA and silently have no effect.
+         *     For single-transformer variants (TI2V-5B, Wan 2.1 VACE-14B) only the primary
+         *     list is used at denoise time, so a LoRA that would land only in the low-noise
+         *     list is applied to the transformer instead, with a warning. The alternative is
+         *     to accept the LoRA and silently have no effect.
          */
         WanLoRALoaderInvocation: {
             /**
@@ -40823,7 +40823,7 @@ export type components = {
          *     higher-compression VAE (z_dim=48).
          * @enum {string}
          */
-        WanVariantType: "t2v_a14b" | "i2v_a14b" | "ti2v_5b";
+        WanVariantType: "t2v_a14b" | "i2v_a14b" | "ti2v_5b" | "vace" | "vace_2_1";
         /**
          * Denoise Video - Wan 2.2
          * @description Run the Wan 2.2 denoising loop on a multi-frame latent tensor.

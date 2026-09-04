@@ -226,6 +226,8 @@ def _group_by_layer(state_dict: Dict[str, torch.Tensor]) -> dict[str, dict[str, 
         ".lora_up.weight",
         ".dora_scale",
         ".alpha",
+        ".diff_b",
+        ".diff",
     ]
 
     for key in state_dict:

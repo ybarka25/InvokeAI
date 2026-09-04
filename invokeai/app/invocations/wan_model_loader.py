@@ -156,12 +156,16 @@ class WanModelLoaderInvocation(BaseInvocation):
             primary_expert = getattr(main_config, "expert", "none")
             primary_id = self.model.model_copy(update={"submodel_type": SubModelType.Transformer})
 
-            if self.transformer_low_noise_model is not None and main_variant == WanVariantType.TI2V_5B:
-                # The field's own docs promise this input is ignored for the
-                # single-expert TI2V-5B — e.g. a leftover wire from an A14B session.
-                context.logger.warning("'Transformer (Low Noise)' is ignored for the single-expert TI2V-5B variant.")
+            single_expert_variants = (WanVariantType.TI2V_5B, WanVariantType.VACE_2_1)
+            if self.transformer_low_noise_model is not None and main_variant in single_expert_variants:
+                # The field's own docs promise this input is ignored for single-expert
+                # variants — e.g. a leftover wire from an A14B session. TI2V-5B and Wan
+                # 2.1 VACE-14B are both single dense transformers, not a dual-expert MoE.
+                context.logger.warning(
+                    f"'Transformer (Low Noise)' is ignored for the single-expert {main_variant.value} variant."
+                )
 
-            if self.transformer_low_noise_model is not None and main_variant != WanVariantType.TI2V_5B:
+            if self.transformer_low_noise_model is not None and main_variant not in single_expert_variants:
                 if self.transformer_low_noise_model.key == self.model.key:
                     raise ValueError(
                         "The same model is wired to both 'Transformer' and 'Transformer (Low Noise)'. "
@@ -230,8 +234,8 @@ class WanModelLoaderInvocation(BaseInvocation):
                 # (only one expert runs). Warn but don't abort — a single wired transformer
                 # is explicit intent just like a pair is, and the tag is only a filename
                 # guess, so an untagged file must not be fatal here when the paired path
-                # accepts it. TI2V-5B is single-expert and totally fine.
-                if main_variant in (WanVariantType.T2V_A14B, WanVariantType.I2V_A14B):
+                # accepts it. TI2V-5B and VACE_2_1 are single-expert and totally fine.
+                if main_variant in (WanVariantType.T2V_A14B, WanVariantType.I2V_A14B, WanVariantType.VACE):
                     message = (
                         "An A14B single-file main is wired to 'Transformer' without a paired "
                         "'Transformer (Low Noise)'. Only this one expert will run; quality will be reduced."

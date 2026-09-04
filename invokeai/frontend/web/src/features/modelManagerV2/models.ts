@@ -305,6 +305,8 @@ export const MODEL_VARIANT_TO_LONG_NAME: Record<AnyModelVariant, string> = {
   t2v_a14b: 'Wan 2.2 T2V A14B',
   i2v_a14b: 'Wan 2.2 I2V A14B',
   ti2v_5b: 'Wan 2.2 TI2V 5B',
+  vace: 'Wan 2.2 VACE A14B',
+  vace_2_1: 'Wan 2.1 VACE 14B',
   a14b: 'Wan 2.2 A14B LoRA',
   '5b': 'Wan 2.2 5B LoRA',
   qwen3_4b: 'Qwen3 4B',

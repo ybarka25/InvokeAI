@@ -28,11 +28,15 @@ from invokeai.backend.model_manager.taxonomy import (
 #
 # One exception applies afterwards, to whichever of the four produced a low-only
 # routing — ``auto`` on a low-tagged LoRA, or an explicit ``low``. Against a
-# single-transformer TI2V-5B main, ``_correct_inert_low_routing`` re-points it at
-# the primary list, because that model has no low-noise expert and the alternative
-# is to accept the LoRA and silently do nothing with it. ``both`` and ``high``
-# always reach the primary list, so they are never affected.
+# single-transformer main (TI2V-5B, or Wan 2.1 VACE-14B), ``_correct_inert_low_routing``
+# re-points it at the primary list, because that model has no low-noise expert and the
+# alternative is to accept the LoRA and silently do nothing with it. ``both`` and
+# ``high`` always reach the primary list, so they are never affected.
 WanLoRATarget = Literal["auto", "both", "high", "low"]
+
+# Variants with exactly one transformer -- the denoise path never reads
+# ``loras_low_noise`` for these, so a low-only routing would otherwise be inert.
+_SINGLE_EXPERT_VARIANTS = (WanVariantType.TI2V_5B, WanVariantType.VACE_2_1)
 
 
 def _assert_is_wan_lora(lora_config: object, lora_key: str) -> None:
@@ -76,12 +80,13 @@ def _assert_lora_variant_matches_main(lora_config: object, main_config: object, 
 def _correct_inert_low_routing(
     context: InvocationContext, main_config: object, lora_key: str, to_primary: bool, to_low_noise: bool
 ) -> tuple[bool, bool]:
-    """Re-point a low-only routing at the primary list when the main is TI2V-5B.
+    """Re-point a low-only routing at the primary list for a single-transformer main.
 
-    TI2V-5B is single-transformer: the denoise path only ever reads the primary LoRA
-    list, so a LoRA routed low-only has no effect at all and the node still reports
-    success. There is no ambiguity about what to do instead — the model has exactly one
-    transformer — so correct the routing rather than merely warning about it.
+    TI2V-5B and Wan 2.1 VACE-14B (``VACE_2_1``) are single-transformer: the denoise
+    path only ever reads the primary LoRA list, so a LoRA routed low-only has no effect
+    at all and the node still reports success. There is no ambiguity about what to do
+    instead — the model has exactly one transformer — so correct the routing rather
+    than merely warning about it.
 
     This is the backstop for the probe-side pin in ``LoRA_LyCORIS_Wan_Config``, which
     can only suppress the expert tag when it managed to detect the variant.
@@ -93,12 +98,13 @@ def _correct_inert_low_routing(
     """
     if to_primary or not to_low_noise:
         return to_primary, to_low_noise
-    if getattr(main_config, "variant", None) != WanVariantType.TI2V_5B:
+    main_variant = getattr(main_config, "variant", None)
+    if main_variant not in _SINGLE_EXPERT_VARIANTS:
         return to_primary, to_low_noise
     context.logger.warning(
         f"LoRA '{lora_key}' is tagged as the low-noise expert, but the single-transformer "
-        "TI2V-5B variant has no such expert. Applying it to the transformer instead — "
-        "the alternative is to silently do nothing."
+        f"{getattr(main_variant, 'value', main_variant)} variant has no such expert. Applying it to "
+        "the transformer instead — the alternative is to silently do nothing."
     )
     return True, False
 
@@ -145,10 +151,10 @@ class WanLoRALoaderInvocation(BaseInvocation):
     low-noise list, ``None`` (untagged) -> both lists. Use the ``target``
     field to override.
 
-    For TI2V-5B (single transformer) only the primary list is used at denoise
-    time, so a LoRA that would land only in the low-noise list is applied to
-    the transformer instead, with a warning. The alternative is to accept the
-    LoRA and silently have no effect.
+    For single-transformer variants (TI2V-5B, Wan 2.1 VACE-14B) only the primary
+    list is used at denoise time, so a LoRA that would land only in the low-noise
+    list is applied to the transformer instead, with a warning. The alternative is
+    to accept the LoRA and silently have no effect.
     """
 
     lora: ModelIdentifierField = InputField(
@@ -223,9 +229,9 @@ class WanLoRACollectionLoader(BaseInvocation):
     recorded ``expert`` tag (set by the probe from the filename). Untagged
     LoRAs go to both lists.
 
-    Against a TI2V-5B main, which is a single transformer with no low-noise
-    expert, a LoRA that would land only in the low-noise list is applied to
-    the transformer instead, with a warning.
+    Against a single-transformer main with no low-noise expert (TI2V-5B, or Wan 2.1
+    VACE-14B), a LoRA that would land only in the low-noise list is applied to the
+    transformer instead, with a warning.
     """
 
     loras: Optional[LoRAField | list[LoRAField]] = InputField(

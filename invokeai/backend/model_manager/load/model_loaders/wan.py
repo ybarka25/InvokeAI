@@ -14,6 +14,7 @@ Currently covers:
 from pathlib import Path
 from typing import Any, Optional
 
+import gguf
 import torch
 
 from invokeai.backend.model_manager.configs.base import Checkpoint_Config_Base, Diffusers_Config_Base
@@ -139,6 +140,9 @@ _WAN_NATIVE_TO_DIFFUSERS_RENAMES: tuple[tuple[str, str], ...] = (
     ("img_emb.proj.1", "condition_embedder.image_embedder.ff.net.0.proj"),
     ("img_emb.proj.3", "condition_embedder.image_embedder.ff.net.2"),
     ("img_emb.proj.4", "condition_embedder.image_embedder.norm2"),
+    # VACE-only keys (harmless on non-VACE checkpoints)
+    ("before_proj", "proj_in"),
+    ("after_proj", "proj_out"),
 )
 
 
@@ -169,15 +173,36 @@ def _unwrap_unquantized_to_compute_dtype(state_dict: dict) -> dict:
     storage directly and crashes against bf16 latents
     (``Input type (c10::BFloat16) and bias type (c10::Half) should be the same``).
 
-    For compatible qtypes (F16/F32/BF16) we just pre-cast to compute_dtype here —
+    For compatible qtypes (F16/F32) we just pre-cast to compute_dtype here —
     they're not quantized, there's no benefit to keeping them wrapped, and
     unwrapping them sidesteps the missing-op problem entirely. Genuinely
     quantized tensors (Q4_K, Q6_K, etc.) stay wrapped — their on-demand
     dequantization through the linear/addmm dispatch path still works.
+
+    BF16 is also eagerly unwrapped here, even though it isn't in
+    ``TORCH_COMPATIBLE_QTYPES`` (that set only covers types ``gguf_sd_loader``
+    can reshape with a plain ``.view()``, since numpy has no native bf16 dtype
+    to reshape in the first place -- BF16 tensors come out of the GGUF reader
+    as an unreshaped flat byte buffer). Left wrapped, some GGUF exports store
+    small always-resident layers (e.g. Wan's ``condition_embedder.time_embedder``)
+    in BF16, and those specific tensors were observed losing their ``GGMLTensor``
+    wrapper somewhere after ``load_state_dict`` but before the forward pass
+    (reproduced with Wan2.2-VACE-Fun-A14B's GGUF export; still not root-caused
+    beyond "some part of the runtime pipeline -- device placement or the
+    partial-loading/expert-swap path -- doesn't preserve it for this specific
+    type"), crashing with a raw-Byte-vs-BFloat16 dtype mismatch in the transformer's
+    time embedding. ``get_dequantized_tensor()`` already dispatches BF16 through
+    ``DEQUANTIZE_FUNCTIONS`` (a correct bit-reinterpret, not a numeric cast) and
+    returns a properly shaped, properly typed plain tensor, so eagerly unwrapping
+    it here -- before it can reach whatever part of the runtime loses the wrapper --
+    sidesteps the bug regardless of where exactly it lives downstream.
     """
     unwrapped: dict = {}
     for key, value in state_dict.items():
-        if isinstance(value, GGMLTensor) and value._ggml_quantization_type in TORCH_COMPATIBLE_QTYPES:
+        if isinstance(value, GGMLTensor) and (
+            value._ggml_quantization_type in TORCH_COMPATIBLE_QTYPES
+            or value._ggml_quantization_type == gguf.GGMLQuantizationType.BF16
+        ):
             # GGMLTensor.get_dequantized_tensor() already casts to compute_dtype.
             unwrapped[key] = value.get_dequantized_tensor()
         else:
@@ -371,7 +396,7 @@ def _build_wan_transformer_config(sd: dict, source: str) -> dict:
     # was used for — so the config is now derived entirely from the weights, which is
     # the point of this helper.
 
-    return {
+    config = {
         "patch_size": (1, 2, 2),
         "in_channels": in_channels,
         "out_channels": out_channels,
@@ -381,6 +406,38 @@ def _build_wan_transformer_config(sd: dict, source: str) -> dict:
         "ffn_dim": ffn_dim,
         "text_dim": text_dim,
     }
+
+    # VACE control branch: present iff `vace_blocks.*` keys exist. Constructing
+    # a WanVACETransformer3DModel with these kwargs is the caller's job — this
+    # helper only reports what the weights say.
+    vace_block_indices: set[int] = set()
+    for key in sd.keys():
+        if isinstance(key, str) and key.startswith("vace_blocks."):
+            parts = key.split(".")
+            if len(parts) >= 2:
+                try:
+                    vace_block_indices.add(int(parts[1]))
+                except ValueError:
+                    pass
+    if vace_block_indices:
+        vace_patch_shape = require("vace_patch_embedding.weight")
+        # `vace_blocks.<n>.*` keys are just this checkpoint's own sequential numbering of its
+        # VACE blocks (0..len-1) -- NOT the `vace_layers` diffusers/upstream mean. `vace_layers`
+        # is the list of MAIN transformer block indices (0..num_layers-1) each VACE block's hint
+        # gets added to; e.g. the real Wan2.1-VACE-14B config.json ships
+        # `vace_layers: [0, 5, 10, ..., 35]` for 8 VACE blocks over 40 main blocks (every 5th),
+        # and the 1.3B variant ships every 2nd of 30. Previously this used the raw block-numbering
+        # set directly ([0, 1, ..., 7]), which dumped every hint into the first 8 main blocks and
+        # left the remaining 80% of the network with zero VACE conditioning -- control was
+        # numerically wired but had no visible effect on output. Reconstruct the evenly-spaced
+        # mapping the same way ComfyUI's `VaceWanModel.__init__` does
+        # (`vace_layers_mapping = {i: n for n, i in enumerate(range(0, num_layers, num_layers // vace_layers))}`).
+        num_vace_blocks = len(vace_block_indices)
+        step = max(num_layers // num_vace_blocks, 1)
+        config["vace_layers"] = list(range(0, num_layers, step))[:num_vace_blocks]
+        config["vace_in_channels"] = vace_patch_shape[1]
+
+    return config
 
 
 @ModelLoaderRegistry.register(base=BaseModelType.Wan, type=ModelType.Main, format=ModelFormat.GGUFQuantized)
@@ -416,7 +473,7 @@ class WanGGUFCheckpointModel(ModelLoader):
 
     def _load_from_singlefile(self, config: Main_GGUF_Wan_Config) -> AnyModel:
         import accelerate
-        from diffusers import WanTransformer3DModel
+        from diffusers import WanTransformer3DModel, WanVACETransformer3DModel
 
         from invokeai.backend.util.logging import InvokeAILogger
 
@@ -451,9 +508,10 @@ class WanGGUFCheckpointModel(ModelLoader):
         sd = _unwrap_unquantized_to_compute_dtype(sd)
 
         model_config = _build_wan_transformer_config(sd, source="GGUF state dict")
+        transformer_cls = WanVACETransformer3DModel if "vace_layers" in model_config else WanTransformer3DModel
 
         with accelerate.init_empty_weights():
-            model = WanTransformer3DModel(**model_config)
+            model = transformer_cls(**model_config)
 
         incompatible_keys = model.load_state_dict(sd, strict=False, assign=True)
         _raise_for_incompatible_keys(incompatible_keys, source="GGUF state dict")
@@ -493,7 +551,7 @@ class WanCheckpointModel(ModelLoader):
 
     def _load_from_singlefile(self, config: Main_Checkpoint_Wan_Config) -> AnyModel:
         import accelerate
-        from diffusers import WanTransformer3DModel
+        from diffusers import WanTransformer3DModel, WanVACETransformer3DModel
         from safetensors.torch import load_file
 
         from invokeai.backend.util.logging import InvokeAILogger
@@ -525,9 +583,10 @@ class WanCheckpointModel(ModelLoader):
             sd = _convert_wan_native_to_diffusers(sd)
 
         model_config = _build_wan_transformer_config(sd, source="checkpoint state dict")
+        transformer_cls = WanVACETransformer3DModel if "vace_layers" in model_config else WanTransformer3DModel
 
         with accelerate.init_empty_weights():
-            model = WanTransformer3DModel(**model_config)
+            model = transformer_cls(**model_config)
 
         # Cast every float tensor to the compute dtype. Dequantized fp8_scaled
         # weights are already there; this catches plain fp16/fp32/fp8 checkpoints

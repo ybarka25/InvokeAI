@@ -13,6 +13,7 @@ from invokeai.backend.model_manager.taxonomy import (
     ModelFormat,
     ModelType,
     ModelVariantType,
+    WanVariantType,
 )
 from invokeai.backend.util.logging import InvokeAILogger
 
@@ -536,7 +537,7 @@ class InputFieldJSONSchemaExtra(BaseModel):
     ui_choice_labels: Optional[dict[str, str]] = None
     ui_model_base: Optional[list[BaseModelType]] = None
     ui_model_type: Optional[list[ModelType]] = None
-    ui_model_variant: Optional[list[ClipVariantType | ModelVariantType]] = None
+    ui_model_variant: Optional[list[ClipVariantType | ModelVariantType | WanVariantType]] = None
     ui_model_format: Optional[list[ModelFormat]] = None
     ui_model_provider_id: Optional[list[str]] = None
 
@@ -615,7 +616,7 @@ def migrate_model_ui_type(ui_type: UIType | str, json_schema_extra: dict[str, An
     ui_model_type: list[ModelType] | None = None
     ui_model_base: list[BaseModelType] | None = None
     ui_model_format: list[ModelFormat] | None = None
-    ui_model_variant: list[ClipVariantType | ModelVariantType] | None = None
+    ui_model_variant: list[ClipVariantType | ModelVariantType | WanVariantType] | None = None
 
     match ui_type:
         case UIType.MainModel:
@@ -718,7 +719,9 @@ def InputField(
     ui_choice_labels: Optional[dict[str, str]] = None,
     ui_model_base: Optional[BaseModelType | list[BaseModelType]] = None,
     ui_model_type: Optional[ModelType | list[ModelType]] = None,
-    ui_model_variant: Optional[ClipVariantType | ModelVariantType | list[ClipVariantType | ModelVariantType]] = None,
+    ui_model_variant: Optional[
+        ClipVariantType | ModelVariantType | WanVariantType | list[ClipVariantType | ModelVariantType | WanVariantType]
+    ] = None,
     ui_model_format: Optional[ModelFormat | list[ModelFormat]] = None,
     ui_model_provider_id: Optional[str | list[str]] = None,
 ) -> Any:
