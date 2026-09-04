@@ -129,6 +129,26 @@ class TestAccepts:
         assert config.variant == WanVariantType.T2V_A14B
         assert config.expert == "high"
 
+    def test_vace_fun_a14b(self, tmp_path: Path) -> None:
+        """VACE-Fun-A14B: base branch is shape-identical to plain T2V-A14B (16-channel,
+        5120-wide), distinguished only by the presence of vace_blocks.*."""
+        sd = _native_sd(16)
+        sd["vace_blocks.0.after_proj.weight"] = _t(A14B_DIM, A14B_DIM)
+        config = _probe(tmp_path, "wan22-vace-fun-a14b-high_noise.safetensors", sd)
+        assert config.variant == WanVariantType.VACE
+        assert config.expert == "high"
+
+    def test_vace_wan_2_1(self, tmp_path: Path) -> None:
+        """Wan 2.1 VACE-14B is shape-identical to VACE-Fun-A14B (both 5120-wide with
+        vace_blocks.*); only the "wan21" filename marker routes it to VACE_2_1 instead
+        of being rejected as a bare Wan 2.1 model. It's a single dense transformer, so
+        expert is pinned to 'none' regardless of the filename's noise-level wording."""
+        sd = _native_sd(16)
+        sd["vace_blocks.0.after_proj.weight"] = _t(A14B_DIM, A14B_DIM)
+        config = _probe(tmp_path, "Wan2.1-VACE-14B.safetensors", sd)
+        assert config.variant == WanVariantType.VACE_2_1
+        assert config.expert == "none"
+
 
 def _ggml(*shape: int) -> GGMLTensor:
     return GGMLTensor(
@@ -205,14 +225,6 @@ class TestRejects:
         sd["control_adapter.residual_blocks.0.conv1.weight"] = _t(A14B_DIM, A14B_DIM)
         with pytest.raises(NotAMatchError, match="Fun-Control"):
             _probe(tmp_path, "wan2.2_fun_camera_high_noise_14B_bf16.safetensors", sd)
-
-    def test_vace(self, tmp_path: Path) -> None:
-        """VACE exists for both Wan 2.1 and 2.2; either way this loader has no
-        control branch, so it must refuse rather than silently ignore the input."""
-        sd = _native_sd(16)
-        sd["vace_blocks.0.after_proj.weight"] = _t(A14B_DIM, A14B_DIM)
-        with pytest.raises(NotAMatchError, match="VACE"):
-            _probe(tmp_path, "vace-model.safetensors", sd)
 
     def test_wan_2_1_filename(self, tmp_path: Path) -> None:
         with pytest.raises(NotAMatchError, match="Wan 2.1"):
